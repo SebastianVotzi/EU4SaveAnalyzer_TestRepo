@@ -1,0 +1,475 @@
+/* ============================================================
+   EU4 Save Analyzer - Dark Theme CSS
+   ============================================================ */
+
+:root {
+    --bg-primary:    #0f0f1a;
+    --bg-secondary:  #1a1a2e;
+    --bg-card:       #16213e;
+    --bg-hover:      #1e2d4a;
+    --accent:        #ffc107;
+    --accent-dim:    #cc9a06;
+    --text-primary:  #e8e8f0;
+    --text-muted:    #6c757d;
+    --border:        #2d3561;
+    --adm-color:     #64b5f6;
+    --dip-color:     #81c784;
+    --mil-color:     #ef9a9a;
+}
+
+/* ---- Base ---- */
+* { box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ---- Navbar ---- */
+#main-navbar {
+    background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 50%, #16213e 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 0.6rem 1rem;
+    box-shadow: 0 2px 20px rgba(255,193,7,0.15);
+}
+
+#main-navbar .navbar-brand {
+    font-size: 1.3rem;
+    color: var(--accent) !important;
+    letter-spacing: 0.5px;
+}
+
+.navbar-nav .nav-link {
+    color: #aab !important;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+    color: var(--accent) !important;
+    background-color: rgba(255,193,7,0.1);
+}
+
+/* ---- Cards ---- */
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.card-header {
+    background-color: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+}
+
+.dashboard-card {
+    transition: box-shadow 0.2s;
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 6px 30px rgba(255,193,7,0.1);
+}
+
+/* ---- Hero Card ---- */
+.hero-card {
+    background: linear-gradient(135deg, #0d0d2e 0%, #16213e 40%, #1a1a2e 100%);
+    border: 1px solid rgba(255,193,7,0.3);
+    box-shadow: 0 0 40px rgba(255,193,7,0.08);
+}
+
+/* ---- KPI Cards ---- */
+.kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.2s;
+}
+
+.kpi-card:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(255,193,7,0.15); }
+.kpi-card.kpi-human { border-left: 3px solid var(--accent); }
+
+.kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.kpi-value { font-size: 1.4rem; font-weight: 700; line-height: 1; }
+.kpi-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.nation-name { font-size: 1rem; color: #fff; margin: 0; }
+
+/* ---- Stat Mini Cards ---- */
+.stat-mini-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+.stat-mini-value { font-size: 1.8rem; font-weight: 700; }
+.stat-mini-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+/* ---- Nation Tags ---- */
+.nation-tag {
+    display: inline-block;
+    background: rgba(255,193,7,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(255,193,7,0.3);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.nation-tag-sm {
+    display: inline-block;
+    background: rgba(255,193,7,0.1);
+    color: var(--accent);
+    border-radius: 3px;
+    padding: 0 5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: monospace;
+    margin-right: 4px;
+}
+
+.player-badge {
+    background: rgba(255,193,7,0.2);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.75rem;
+}
+
+/* ---- Tables ---- */
+.table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.table-dark th {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-color: var(--border) !important;
+    background: rgba(0,0,0,0.2);
+}
+
+.table-dark td {
+    border-color: rgba(255,255,255,0.05) !important;
+    vertical-align: middle;
+    font-size: 0.85rem;
+}
+
+.human-row td { background-color: rgba(255,193,7,0.04) !important; }
+.table-header-sticky th { position: sticky; top: 0; z-index: 10; }
+
+/* ---- Badges ---- */
+.badge-success  { background-color: #2e7d32 !important; }
+.badge-info     { background-color: #0277bd !important; }
+.badge-warning  { background-color: #e65100 !important; }
+.badge-danger   { background-color: #c62828 !important; }
+.badge-secondary { background-color: #424242 !important; }
+
+/* ---- Rank Badges ---- */
+.rank-badge { font-weight: 700; font-size: 0.85rem; }
+.rank-gold   { color: #ffd700; }
+.rank-silver { color: #c0c0c0; }
+.rank-bronze { color: #cd7f32; }
+
+/* ---- Sort Links ---- */
+.sort-link { color: var(--text-muted); text-decoration: none; font-size: 0.75rem; }
+.sort-link:hover { color: var(--accent); }
+.sort-link.active { color: var(--accent); }
+
+/* ---- Income Bar (Progress-like) ---- */
+.income-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #333;
+    margin-bottom: 2px;
+}
+.income-seg { height: 100%; min-width: 1px; transition: width 0.3s; }
+.income-seg.tax     { background: #f0c040; }
+.income-seg.prod    { background: #4caf50; }
+.income-seg.trade   { background: #2196f3; }
+.income-seg.gold    { background: #ff9800; }
+.text-tax   { color: #f0c040; }
+.text-prod  { color: #4caf50; }
+.text-trade { color: #2196f3; }
+.text-gold  { color: #ff9800; }
+
+/* ---- Spending Bar ---- */
+.spending-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #333;
+}
+.spending-bar div { height: 100%; }
+
+/* ---- Mana Colors ---- */
+.text-adm { color: var(--adm-color) !important; }
+.text-dip { color: var(--dip-color) !important; }
+.text-mil { color: var(--mil-color) !important; }
+
+.mana-breakdown { display: flex; gap: 6px; font-size: 0.75rem; font-family: monospace; }
+.mana-seg { font-weight: 600; }
+
+/* ---- Mana Legend Cards ---- */
+.mana-legend-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+.adm-card { background: linear-gradient(135deg, rgba(100,181,246,0.1), transparent); border-left: 3px solid var(--adm-color); }
+.dip-card { background: linear-gradient(135deg, rgba(129,199,132,0.1), transparent); border-left: 3px solid var(--dip-color); }
+.mil-card { background: linear-gradient(135deg, rgba(239,154,154,0.1), transparent); border-left: 3px solid var(--mil-color); }
+.adm-card i { color: var(--adm-color); }
+.dip-card i { color: var(--dip-color); }
+.mil-card i { color: var(--mil-color); }
+
+/* ---- War Cards ---- */
+.war-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+}
+.active-war { border-left: 3px solid #e53935; }
+.war-header { display: flex; align-items: center; margin-bottom: 0.5rem; }
+.war-name { font-size: 0.95rem; color: #fff; margin: 0.5rem 0; }
+.war-parties { display: flex; align-items: center; gap: 1rem; }
+.attacker-side, .defender-side { flex: 1; }
+.vs-divider { font-size: 1.2rem; color: var(--accent); }
+.tags { font-family: monospace; font-size: 0.8rem; color: var(--text-primary); }
+.tag-list { font-family: monospace; font-size: 0.8rem; }
+
+/* ---- Upload Zone ---- */
+.upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(255,193,7,0.05);
+}
+.upload-label { cursor: pointer; display: block; }
+
+/* ---- Form Controls ---- */
+.form-control-dark {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+}
+.form-control-dark:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 0.2rem rgba(255,193,7,0.25) !important;
+}
+.form-control-dark::placeholder { color: var(--text-muted) !important; }
+
+/* ---- Legend Dot ---- */
+.legend-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+/* ---- Footer ---- */
+.footer {
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+}
+
+/* ---- Page Header ---- */
+.page-header h2 { color: var(--text-primary); font-weight: 700; }
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+    .kpi-card { margin-bottom: 0.5rem; }
+    .war-parties { flex-direction: column; }
+    .mana-breakdown { flex-wrap: wrap; }
+}
+
+/* ---- Bootstrap Overrides ---- */
+.btn-warning { color: #000; }
+.btn-outline-warning:hover { color: #000; }
+.progress { background-color: #333; }
+.table > :not(caption) > * > * { background-color: transparent; }
+
+/* ============================================================
+   SPIELER-VERGLEICH Styles
+   ============================================================ */
+
+/* Spieler-Auswahl Checkboxen */
+.player-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 2px solid #333;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    font-size: 0.85rem;
+}
+
+.player-checkbox-label:hover {
+    border-color: var(--player-color, var(--accent));
+    background: rgba(255,255,255,0.04);
+}
+
+/* Ausgewählter Spieler: Randfarbe aus CSS-Variable */
+.player-checkbox-label.selected {
+    border-color: var(--player-color, var(--accent));
+    background: color-mix(in srgb, var(--player-color, var(--accent)) 10%, transparent);
+}
+
+.player-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.player-check-tag {
+    font-family: monospace;
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.player-check-name {
+    color: var(--text-primary);
+}
+
+/* Spieler-Statistik-Karten */
+.player-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    height: 100%;
+    transition: box-shadow 0.2s;
+}
+
+.player-stat-card:hover {
+    box-shadow: 0 4px 20px rgba(255,255,255,0.08);
+}
+
+.player-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.player-color-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.player-card-playername {
+    font-weight: 700;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.player-card-nation {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* 2x3 Mini-Statistik-Raster in der Spielerkarte */
+.player-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.player-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+}
+
+.ps-value {
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+.ps-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Herrscherwert-Badges (ADM/DIP/MIL) */
+.ruler-display { display: flex; align-items: center; gap: 6px; }
+
+.ruler-stat {
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 1px 8px;
+    border-radius: 4px;
+}
+
+.ruler-stat.adm { background: rgba(100,181,246,0.15); color: var(--adm-color); }
+.ruler-stat.dip { background: rgba(129,199,132,0.15); color: var(--dip-color); }
+.ruler-stat.mil { background: rgba(239,154,154,0.15); color: var(--mil-color); }
+
+/* Detailtabelle: Abschnitts-Header-Zeilen */
+.section-header td {
+    background: rgba(255,193,7,0.05) !important;
+    border-top: 1px solid rgba(255,193,7,0.2) !important;
+}
+
+/* Bester Wert in einer Zeile hervorheben */
+.best-cell {
+    background: rgba(255,193,7,0.08) !important;
+    font-weight: 700;
+}
+
+/* Stat-Label Spalte (erste Spalte der Tabelle) */
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding-left: 1rem !important;
+    white-space: nowrap;
+}
+
+.mana-display { font-size: 0.8rem; }

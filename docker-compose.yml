@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  eu4analyzer:
+    build: .
+    container_name: eu4-save-analyzer
+    ports:
+      - "8080:8080"
+    volumes:
+      # SQLite-Datenbank persistent außerhalb des Containers
+      - eu4_data:/app/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    restart: unless-stopped
+
+volumes:
+  eu4_data:
+    driver: local

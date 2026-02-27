@@ -1,0 +1,196 @@
+@model WarsViewModel
+@{
+    ViewData["Title"] = "Kriege";
+    ViewBag.SaveId = Model.SaveGameId;
+    ViewBag.GameDate = Model.GameDate;
+}
+
+<div class="page-header mb-4">
+    <h2><i class="bi bi-fire me-2 text-warning"></i>Kriegs-Dashboard
+        <small class="text-muted fs-6 ms-2">@Model.GameDate</small>
+    </h2>
+    <p class="text-muted">Aktive und vergangene Kriege mit Verluststatistiken</p>
+</div>
+
+<!-- KPI -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-mini-card">
+            <div class="stat-mini-value text-danger">@Model.ActiveWars.Count</div>
+            <div class="stat-mini-label">Aktive Kriege</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-mini-card">
+            <div class="stat-mini-value text-muted">@Model.PreviousWars.Count</div>
+            <div class="stat-mini-label">Beendete Kriege</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-mini-card">
+            <div class="stat-mini-value text-warning">
+                @Model.PreviousWars.Count(w => w.Outcome == "attacker_win")
+            </div>
+            <div class="stat-mini-label">Angreifer-Siege</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-mini-card">
+            <div class="stat-mini-value text-info">
+                @((Model.ActiveWars.Concat(Model.PreviousWars).Sum(w => w.TotalLosses)).ToString("N0"))
+            </div>
+            <div class="stat-mini-label">Gesamtverluste</div>
+        </div>
+    </div>
+</div>
+
+<!-- Suche -->
+<div class="row mb-3">
+    <div class="col-md-5">
+        <form method="get" class="d-flex gap-2">
+            <input type="hidden" name="saveId" value="@Model.SaveGameId" />
+            <input type="text" name="search" value="@Model.SearchTerm"
+                   class="form-control form-control-dark" placeholder="Krieg oder Nation suchen..." />
+            <button type="submit" class="btn btn-warning"><i class="bi bi-search"></i></button>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <a href="/Wars?saveId=@Model.SaveGameId" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            }
+        </form>
+    </div>
+</div>
+
+<!-- Chart: Verluste der größten Kriege -->
+@if (Model.PreviousWars.Any(w => w.TotalLosses > 0))
+{
+    <div class="card dashboard-card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i>Verluste der größten Kriege</h6>
+        </div>
+        <div class="card-body">
+            <canvas id="lossesChart" height="80"></canvas>
+        </div>
+    </div>
+}
+
+<!-- Aktive Kriege -->
+@if (Model.ActiveWars.Any())
+{
+    <h5 class="text-danger mb-3">
+        <i class="bi bi-fire me-2"></i>Aktive Kriege (@Model.ActiveWars.Count)
+    </h5>
+    <div class="row g-3 mb-4">
+        @foreach (var war in Model.ActiveWars)
+        {
+            <div class="col-lg-6">
+                <div class="war-card active-war">
+                    <div class="war-header">
+                        <span class="badge bg-danger">AKTIV</span>
+                        <span class="war-score text-warning ms-2">Score: @war.WarScore.ToString("N0")</span>
+                    </div>
+                    <h6 class="war-name">@(string.IsNullOrEmpty(war.Name) ? "Unbekannter Krieg" : war.Name)</h6>
+                    <div class="war-parties">
+                        <div class="attacker-side">
+                            <small class="text-muted">Angreifer</small>
+                            <div class="tags">@war.AttackerTags</div>
+                        </div>
+                        <div class="vs-divider">⚔</div>
+                        <div class="defender-side">
+                            <small class="text-muted">Verteidiger</small>
+                            <div class="tags">@war.DefenderTags</div>
+                        </div>
+                    </div>
+                    <div class="war-stats mt-2">
+                        <span class="text-muted small">Start: @war.StartDate</span>
+                        @if (war.TotalLosses > 0)
+                        {
+                            <span class="ms-3 small">
+                                Verluste: <span class="text-warning">@war.TotalLosses.ToString("N0")</span>
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Vergangene Kriege -->
+<h5 class="text-muted mb-3">
+    <i class="bi bi-archive me-2"></i>Vergangene Kriege (@Model.PreviousWars.Count)
+</h5>
+<div class="card dashboard-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Kriegsname</th>
+                        <th>Start</th>
+                        <th>Ende</th>
+                        <th>Angreifer</th>
+                        <th>Verteidiger</th>
+                        <th class="text-center">Ausgang</th>
+                        <th class="text-end">Verl. Angreifer</th>
+                        <th class="text-end">Verl. Verteidiger</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var war in Model.PreviousWars)
+                    {
+                        <tr>
+                            <td class="fw-bold">@(string.IsNullOrEmpty(war.Name) ? "—" : war.Name)</td>
+                            <td class="text-muted small">@war.StartDate</td>
+                            <td class="text-muted small">@war.EndDate</td>
+                            <td><span class="tag-list">@war.AttackerTags</span></td>
+                            <td><span class="tag-list">@war.DefenderTags</span></td>
+                            <td class="text-center">
+                                <span class="badge @war.OutcomeBadgeClass">@war.OutcomeDisplay</span>
+                            </td>
+                            <td class="text-end text-warning small">@war.AttackerLosses.ToString("N0")</td>
+                            <td class="text-end text-info small">@war.DefenderLosses.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Verlust-Chart für die 10 blutigsten Kriege
+    const wars = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.PreviousWars
+            .Where(w => w.TotalLosses > 0)
+            .OrderByDescending(w => w.TotalLosses)
+            .Take(10)
+            .Select(w => new {
+                name = string.IsNullOrEmpty(w.Name) ? "Unbekannt" : (w.Name.Length > 25 ? w.Name[..25] + "…" : w.Name),
+                attackers = w.AttackerLosses,
+                defenders = w.DefenderLosses
+            })
+    ));
+
+    if (wars.length > 0) {
+        new Chart(document.getElementById('lossesChart')?.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: wars.map(w => w.name),
+                datasets: [
+                    { label: 'Angreifer Verluste', data: wars.map(w => w.attackers), backgroundColor: '#e53935' },
+                    { label: 'Verteidiger Verluste', data: wars.map(w => w.defenders), backgroundColor: '#1e88e5' }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#ccc' } } },
+                scales: {
+                    x: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                    y: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+            }
+        });
+    }
+</script>
+}

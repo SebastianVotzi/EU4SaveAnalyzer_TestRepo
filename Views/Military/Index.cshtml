@@ -1,0 +1,176 @@
+@model MilitaryViewModel
+@{
+    ViewData["Title"] = "Militär";
+    ViewBag.SaveId = Model.SaveGameId;
+    ViewBag.GameDate = Model.GameDate;
+}
+
+<div class="page-header mb-4">
+    <h2><i class="bi bi-shield-fill me-2 text-warning"></i>Militär-Dashboard
+        <small class="text-muted fs-6 ms-2">@Model.GameDate</small>
+    </h2>
+    <p class="text-muted">Armeestärke, Force Limit, Manpower und Marine</p>
+</div>
+
+<!-- Suchleiste -->
+<div class="row mb-3">
+    <div class="col-md-5">
+        <form method="get" class="d-flex gap-2">
+            <input type="hidden" name="saveId" value="@Model.SaveGameId" />
+            <input type="text" name="search" value="@Model.SearchTerm"
+                   class="form-control form-control-dark" placeholder="Nation suchen..." />
+            <button type="submit" class="btn btn-warning"><i class="bi bi-search"></i></button>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <a href="/Military?saveId=@Model.SaveGameId" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            }
+        </form>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i>Armeegröße vs. Force Limit (Top 15)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="armyChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-water me-2 text-warning"></i>Manpower-Auslastung</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="manpowerChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabelle -->
+<div class="card dashboard-card">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-table me-2 text-warning"></i>Militär-Übersicht</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nation</th>
+                        <th>Spieler</th>
+                        <th class="text-center">Armee</th>
+                        <th class="text-center">Force Limit</th>
+                        <th class="text-center">FL Nutzung</th>
+                        <th class="text-center">Manpower</th>
+                        <th class="text-center">Marine</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int rank = 1; }
+                    @foreach (var c in Model.Countries)
+                    {
+                        double fl = c.ForceLimitUsage;
+                        string flColor = fl > 100 ? "text-danger" : fl > 75 ? "text-warning" : "text-success";
+                        <tr class="@(c.IsHuman ? "human-row" : "")">
+                            <td class="text-muted">@rank</td>
+                            <td>
+                                <span class="nation-tag-sm">@c.Tag</span>
+                                @c.Name
+                            </td>
+                            <td>
+                                @if (c.IsHuman && c.PlayerName != null)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-person-fill me-1"></i>@c.PlayerName
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-center fw-bold text-warning">@c.ArmySize</td>
+                            <td class="text-center">@c.ForceLimit</td>
+                            <td class="text-center @flColor">
+                                @fl.ToString("N0")%
+                                <div class="progress mt-1" style="height:4px;">
+                                    <div class="progress-bar @(fl > 100 ? "bg-danger" : "bg-warning")"
+                                         style="width:@(Math.Min(100, fl).ToString("N0"))%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                @c.Manpower.ToString("N1")k / @c.MaxManpower.ToString("N1")k
+                                <div class="progress mt-1" style="height:4px;">
+                                    <div class="progress-bar bg-info"
+                                         style="width:@(c.MaxManpower > 0 ? (c.Manpower/c.MaxManpower*100).ToString("N0") : "0")%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center text-info">@c.NavySize <small class="text-muted">/ @c.NavalForceLimit</small></td>
+                        </tr>
+                        rank++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const saveId = @Model.SaveGameId;
+
+    async function loadCharts() {
+        const res = await fetch(`/Military/ChartData?saveId=${saveId}`);
+        const d = await res.json();
+
+        // Armee vs Force Limit
+        new Chart(document.getElementById('armyChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: d.labels,
+                datasets: [
+                    { label: 'Armeegröße', data: d.armySize, backgroundColor: '#ffc107' },
+                    { label: 'Force Limit', data: d.forceLimit, backgroundColor: '#6c757d', type: 'line',
+                      borderColor: '#adb5bd', fill: false, tension: 0.3, pointRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#ccc' } } },
+                scales: {
+                    x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                    y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+            }
+        });
+
+        // Manpower Top 8 (Horizontal Bar)
+        const top8 = { labels: d.labels.slice(0,8), mp: d.manpower.slice(0,8) };
+        new Chart(document.getElementById('manpowerChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: top8.labels,
+                datasets: [{ label: 'Manpower (k)', data: top8.mp, backgroundColor: '#0dcaf0' }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                    y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+            }
+        });
+    }
+
+    loadCharts();
+</script>
+}

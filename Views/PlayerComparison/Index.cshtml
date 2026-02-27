@@ -1,0 +1,637 @@
+@model PlayerComparisonViewModel
+@{
+    ViewData["Title"] = "Spieler-Vergleich";
+    ViewBag.SaveId   = Model.SaveGameId;
+    ViewBag.GameDate = Model.GameDate;
+
+    // Tags der ausgewählten Spieler als komma-getrennten String für AJAX-Calls
+    string selectedTagsParam = string.Join(",", Model.SelectedTags);
+
+    // Alle Spieler oder nur die ausgewählten? → Fallback: alle
+    var compareList = Model.SelectedPlayers.Any() ? Model.SelectedPlayers : Model.Players;
+
+    // Farben für bis zu 8 Spieler (für Charts und Karten konsistent)
+    string[] playerColors = { "#ffc107", "#4caf50", "#2196f3", "#f44336", "#9c27b0", "#00bcd4", "#ff9800", "#e91e63" };
+}
+
+<div class="page-header mb-3">
+    <h2>
+        <i class="bi bi-people-fill me-2 text-warning"></i>Spieler-Vergleich
+        <small class="text-muted fs-6 ms-2">@Model.GameDate</small>
+    </h2>
+    <p class="text-muted mb-0">Direkter Vergleich aller menschlichen Spieler im Multiplayer-Save</p>
+</div>
+
+@if (!Model.Players.Any())
+{
+    <!-- Hinweis wenn keine menschlichen Spieler gefunden wurden -->
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Keine Spieler gefunden.</strong>
+        Dieser Save enthält keine menschlichen Spieler (Singleplayer-Save ohne <code>human = yes</code> Einträge).
+        Der Spieler-Vergleich ist nur für Multiplayer-Saves sinnvoll.
+    </div>
+}
+else
+{
+    <!-- ============================================================
+         SPIELER-AUSWAHL: Checkboxen um den Vergleich einzuschränken
+         ============================================================ -->
+    <div class="card dashboard-card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-check2-square me-2 text-warning"></i>
+                Spieler auswählen
+                <span class="badge bg-secondary ms-2">@Model.Players.Count Spieler im Save</span>
+            </h6>
+            <div class="d-flex gap-2">
+                <!-- Alle auswählen -->
+                <a href="/PlayerComparison?saveId=@Model.SaveGameId"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-check-all me-1"></i>Alle
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!--
+                Formular mit Checkboxen: Beim Abschicken werden die gewählten Tags
+                als komma-getrennter "selectedTags"-Parameter an den Controller gesendet.
+                JavaScript sammelt die Werte aller angehakten Checkboxen.
+            -->
+            <form id="filterForm" method="get">
+                <input type="hidden" name="saveId" value="@Model.SaveGameId" />
+                <input type="hidden" name="selectedTags" id="selectedTagsInput" value="@string.Join(",", Model.SelectedTags)" />
+
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var (player, idx) in Model.Players.Select((p, i) => (p, i)))
+                    {
+                        bool isSelected = Model.SelectedTags.Count == 0 || Model.SelectedTags.Contains(player.Tag);
+                        string color    = playerColors[idx % playerColors.Length];
+
+                        <label class="player-checkbox-label @(isSelected ? "selected" : "")"
+                               style="--player-color: @color;"
+                               data-tag="@player.Tag">
+                            <input type="checkbox" class="player-check d-none"
+                                   value="@player.Tag"
+                                   @(isSelected ? "checked" : "") />
+                            <span class="player-dot" style="background: @color;"></span>
+                            <span class="player-check-tag">@player.Tag</span>
+                            <span class="player-check-name">@player.Name</span>
+                            <small class="text-muted ms-1">(@player.PlayerName)</small>
+                        </label>
+                    }
+                </div>
+
+                <div class="mt-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-warning btn-sm" onclick="buildTagsParam()">
+                        <i class="bi bi-funnel-fill me-1"></i>Vergleich aktualisieren
+                    </button>
+                    @if (Model.SelectedTags.Any())
+                    {
+                        <a href="/PlayerComparison?saveId=@Model.SaveGameId"
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x me-1"></i>Auswahl zurücksetzen
+                        </a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         SPIELER-KARTEN: Übersichtskarten pro Spieler
+         ============================================================ -->
+    <div class="row g-3 mb-4">
+        @foreach (var (player, idx) in compareList.Select((p, i) => (p, i)))
+        {
+            string color = playerColors[idx % playerColors.Length];
+            <div class="col-xl-3 col-lg-4 col-md-6">
+                <div class="player-stat-card" style="border-left: 4px solid @color;">
+                    <!-- Kopfzeile: Spielername + Nation -->
+                    <div class="player-card-header">
+                        <div class="player-color-dot" style="background: @color;"></div>
+                        <div>
+                            <div class="player-card-playername">
+                                <i class="bi bi-person-fill me-1"></i>@player.PlayerName
+                            </div>
+                            <div class="player-card-nation">
+                                <span class="nation-tag-sm">@player.Tag</span>@player.Name
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistik-Raster: 2x3 Mini-Stats -->
+                    <div class="player-stats-grid">
+                        <div class="player-stat">
+                            <span class="ps-value text-warning">@player.MonthlyIncome.ToString("N1")</span>
+                            <span class="ps-label">Einkommen/M</span>
+                        </div>
+                        <div class="player-stat">
+                            <span class="ps-value @(player.Profit >= 0 ? "text-success" : "text-danger")">
+                                @player.Profit.ToString("+N1;-N1;0")
+                            </span>
+                            <span class="ps-label">Profit/M</span>
+                        </div>
+                        <div class="player-stat">
+                            <span class="ps-value text-warning">@player.ArmySize</span>
+                            <span class="ps-label">Armee</span>
+                        </div>
+                        <div class="player-stat">
+                            <span class="ps-value text-info">@player.ForceLimit</span>
+                            <span class="ps-label">Force Limit</span>
+                        </div>
+                        <div class="player-stat">
+                            <span class="ps-value">@player.ProvinceCount</span>
+                            <span class="ps-label">Provinzen</span>
+                        </div>
+                        <div class="player-stat">
+                            <span class="ps-value">@player.RulerAvg.ToString("N1")</span>
+                            <span class="ps-label">Herrscher Ø</span>
+                        </div>
+                    </div>
+
+                    <!-- Herrscherwerte: ADM / DIP / MIL als farbige Badges -->
+                    <div class="ruler-display mt-2">
+                        <span class="ruler-stat adm" title="ADM">@player.RulerAdm</span>
+                        <span class="ruler-stat dip" title="DIP">@player.RulerDip</span>
+                        <span class="ruler-stat mil" title="MIL">@player.RulerMil</span>
+                        <small class="text-muted ms-1">ADM/DIP/MIL</small>
+                    </div>
+
+                    <!-- Mana-Vorrat -->
+                    <div class="mana-display mt-2">
+                        <span class="text-adm small" title="ADM Power">⚡@player.AdmPower</span>
+                        <span class="text-dip small ms-2" title="DIP Power">⚡@player.DipPower</span>
+                        <span class="text-mil small ms-2" title="MIL Power">⚡@player.MilPower</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- ============================================================
+         CHARTS: 5 umschaltbare Vergleichs-Diagramme
+         ============================================================ -->
+    <div class="card dashboard-card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="mb-0">
+                <i class="bi bi-bar-chart-fill me-2 text-warning"></i>Direktvergleich
+            </h6>
+            <!-- Tab-Buttons: schalten das aktive Diagramm um (AJAX, kein Reload) -->
+            <div class="btn-group btn-group-sm" id="chartTypeBtns">
+                <button class="btn btn-outline-warning active"
+                        onclick="switchChart('economy', this)">
+                    <i class="bi bi-currency-euro me-1"></i>Wirtschaft
+                </button>
+                <button class="btn btn-outline-warning"
+                        onclick="switchChart('military', this)">
+                    <i class="bi bi-shield-fill me-1"></i>Militär
+                </button>
+                <button class="btn btn-outline-warning"
+                        onclick="switchChart('mana', this)">
+                    <i class="bi bi-stars me-1"></i>Mana
+                </button>
+                <button class="btn btn-outline-warning"
+                        onclick="switchChart('spending', this)">
+                    <i class="bi bi-pie-chart-fill me-1"></i>Spending
+                </button>
+                <button class="btn btn-outline-warning"
+                        onclick="switchChart('ruler', this)">
+                    <i class="bi bi-crown-fill me-1"></i>Herrscher
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Canvas für Chart.js - wird per AJAX mit Daten gefüllt -->
+            <canvas id="comparisonChart" height="90"></canvas>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         DETAILTABELLE: Alle Statistiken side-by-side
+         ============================================================ -->
+    <div class="card dashboard-card">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-table me-2 text-warning"></i>
+                Vollständige Statistiken — Alle @compareList.Count Spieler
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <!--
+                    Transponierte Tabelle: Statistik-Zeilen, Spieler-Spalten.
+                    So lassen sich Werte direkt nebeneinander ablesen.
+                -->
+                <table class="table table-dark table-hover table-sm mb-0" id="detailTable">
+                    <thead>
+                        <tr>
+                            <!-- Erste Spalte: Statistik-Name -->
+                            <th style="min-width: 150px;">Statistik</th>
+                            <!-- Eine Spalte pro Spieler -->
+                            @foreach (var (player, idx) in compareList.Select((p, i) => (p, i)))
+                            {
+                                string color = playerColors[idx % playerColors.Length];
+                                <th class="text-center" style="border-top: 3px solid @color;">
+                                    <div style="color: @color; font-weight: 700;">@player.PlayerName</div>
+                                    <div class="small text-muted">@player.Name (@player.Tag)</div>
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Makro: Zeile mit Highlight des besten Werts -->
+                        @{
+                            // Hilfsfunktion: gibt Index des Spielers mit dem höchsten Wert zurück
+                            int BestIdx(Func<PlayerData, double> selector) =>
+                                compareList.Count == 0 ? -1 :
+                                compareList.IndexOf(compareList.MaxBy(selector)!);
+                        }
+
+                        <!-- === WIRTSCHAFT === -->
+                        <tr class="section-header">
+                            <td colspan="@(compareList.Count + 1)" class="text-warning small fw-bold py-1 px-3">
+                                <i class="bi bi-currency-euro me-1"></i>WIRTSCHAFT
+                            </td>
+                        </tr>
+                        @{ int bestIdx = BestIdx(p => p.Treasury); }
+                        <tr>
+                            <td class="stat-label">Treasury (⚜)</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "")">
+                                    @(i == bestIdx ? "🥇 " : "")@p.Treasury.ToString("N0")
+                                </td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.MonthlyIncome); }
+                        <tr>
+                            <td class="stat-label">Einkommen/M</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "")">
+                                    @(i == bestIdx ? "🥇 " : "")+@p.MonthlyIncome.ToString("N1")
+                                </td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.Profit); }
+                        <tr>
+                            <td class="stat-label">Profit/M</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "") @(p.Profit >= 0 ? "text-success" : "text-danger")">
+                                    @(i == bestIdx ? "🥇 " : "")@p.Profit.ToString("+N1;-N1;0")
+                                </td>
+                            }
+                        </tr>
+
+                        <!-- === MILITÄR === -->
+                        <tr class="section-header">
+                            <td colspan="@(compareList.Count + 1)" class="text-warning small fw-bold py-1 px-3">
+                                <i class="bi bi-shield-fill me-1"></i>MILITÄR
+                            </td>
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.ArmySize); }
+                        <tr>
+                            <td class="stat-label">Armeegröße</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.ArmySize</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.ForceLimit); }
+                        <tr>
+                            <td class="stat-label">Force Limit</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.ForceLimit</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.Manpower); }
+                        <tr>
+                            <td class="stat-label">Manpower (k)</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.Manpower.ToString("N1")</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.NavySize); }
+                        <tr>
+                            <td class="stat-label">Marine</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.NavySize</td>
+                            }
+                        </tr>
+
+                        <!-- === TERRITORIUM === -->
+                        <tr class="section-header">
+                            <td colspan="@(compareList.Count + 1)" class="text-warning small fw-bold py-1 px-3">
+                                <i class="bi bi-geo-fill me-1"></i>TERRITORIUM
+                            </td>
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.ProvinceCount); }
+                        <tr>
+                            <td class="stat-label">Provinzen</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.ProvinceCount</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.TotalDevelopment); }
+                        <tr>
+                            <td class="stat-label">Gesamtentwicklung</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.TotalDevelopment</td>
+                            }
+                        </tr>
+
+                        <!-- === HERRSCHER === -->
+                        <tr class="section-header">
+                            <td colspan="@(compareList.Count + 1)" class="text-warning small fw-bold py-1 px-3">
+                                <i class="bi bi-crown-fill me-1"></i>HERRSCHER
+                            </td>
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.RulerAdm); }
+                        <tr>
+                            <td class="stat-label text-adm">ADM</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-adm @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.RulerAdm</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.RulerDip); }
+                        <tr>
+                            <td class="stat-label text-dip">DIP</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-dip @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.RulerDip</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.RulerMil); }
+                        <tr>
+                            <td class="stat-label text-mil">MIL</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-mil @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.RulerMil</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.RulerAvg); }
+                        <tr>
+                            <td class="stat-label fw-bold">Durchschnitt</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center fw-bold @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.RulerAvg.ToString("N1")</td>
+                            }
+                        </tr>
+
+                        <!-- === MANA === -->
+                        <tr class="section-header">
+                            <td colspan="@(compareList.Count + 1)" class="text-warning small fw-bold py-1 px-3">
+                                <i class="bi bi-stars me-1"></i>MANA (generiert gesamt)
+                            </td>
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.TotalAdmGenerated); }
+                        <tr>
+                            <td class="stat-label text-adm">ADM generiert</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-adm @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.TotalAdmGenerated</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.TotalDipGenerated); }
+                        <tr>
+                            <td class="stat-label text-dip">DIP generiert</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-dip @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.TotalDipGenerated</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.TotalMilGenerated); }
+                        <tr>
+                            <td class="stat-label text-mil">MIL generiert</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-mil @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.TotalMilGenerated</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.TotalManaGenerated); }
+                        <tr>
+                            <td class="stat-label fw-bold">Mana Gesamt</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center fw-bold @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.TotalManaGenerated</td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-3 py-2 text-muted small border-top" style="border-color:#333 !important;">
+                <i class="bi bi-trophy-fill text-warning me-1"></i>
+                <strong>🥇</strong> = Bester Wert unter den verglichenen Spielern
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    // ============================================================
+    // Spieler-Checkbox Logik
+    // ============================================================
+
+    /**
+     * Baut den "selectedTags"-Parameter aus allen angehakten Checkboxen zusammen
+     * und schreibt ihn in das versteckte Input-Feld bevor das Formular abgeschickt wird.
+     */
+    function buildTagsParam() {
+        const checked = [...document.querySelectorAll('.player-check:checked')]
+            .map(cb => cb.value);
+        // Alle = kein Filter nötig → leerer String
+        const allCount = document.querySelectorAll('.player-check').length;
+        document.getElementById('selectedTagsInput').value =
+            checked.length === allCount ? '' : checked.join(',');
+    }
+
+    // Visuelles Feedback: Label hervorheben wenn Checkbox gecheckt ist
+    document.querySelectorAll('.player-checkbox-label').forEach(label => {
+        const checkbox = label.querySelector('.player-check');
+        // Initialen Zustand setzen
+        if (checkbox.checked) label.classList.add('selected');
+
+        label.addEventListener('click', () => {
+            checkbox.checked = !checkbox.checked;
+            label.classList.toggle('selected', checkbox.checked);
+        });
+    });
+
+    // ============================================================
+    // Chart.js Vergleichs-Diagramm (AJAX)
+    // ============================================================
+
+    const saveId = @Model.SaveGameId;
+
+    // Tags der angezeigten Spieler für AJAX-Calls
+    const activeTags = '@Html.Raw(string.Join(",", compareList.Select(p => p.Tag)))';
+
+    // Farben der Spieler (gleiche Reihenfolge wie C#)
+    const playerColors = ['#ffc107','#4caf50','#2196f3','#f44336','#9c27b0','#00bcd4','#ff9800','#e91e63'];
+
+    let activeChart = null;  // Referenz auf den aktuellen Chart → für destroy() bei Wechsel
+
+    /**
+     * Wechselt den aktiven Chart-Typ.
+     * Holt Daten per AJAX vom /PlayerComparison/ChartData-Endpunkt,
+     * zerstört den alten Chart und erstellt einen neuen.
+     *
+     * param {string} type   - Chart-Typ: economy, military, mana, spending, ruler
+     * param {HTMLElement} btn - Der geklickte Button (für active-Klasse)
+     */
+    async function switchChart(type, btn) {
+        // Aktiven Button markieren
+        document.querySelectorAll('#chartTypeBtns .btn')
+            .forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        // Alten Chart zerstören um Canvas-Konflikt zu vermeiden
+        if (activeChart) {
+            activeChart.destroy();
+            activeChart = null;
+        }
+
+        // Daten vom Server holen
+        const url = `/PlayerComparison/ChartData?saveId=${saveId}&type=${type}&tags=${activeTags}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const d = await res.json();
+
+        const ctx = document.getElementById('comparisonChart').getContext('2d');
+
+        // Je nach Typ unterschiedliche Chart-Konfiguration
+        switch (type) {
+            case 'economy':
+                // Gruppiertes Balkendiagramm: Einkommen vs. Ausgaben
+                activeChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: d.labels,
+                        datasets: [
+                            { label: 'Einkommen/M', data: d.income, backgroundColor: '#4caf50' },
+                            { label: 'Ausgaben/M',  data: d.expenses, backgroundColor: '#e53935' },
+                            { label: 'Treasury',    data: d.treasury, backgroundColor: '#ffc107', type: 'line',
+                              borderColor: '#ffc107', fill: false, tension: 0.3, yAxisID: 'y2' }
+                        ]
+                    },
+                    options: groupedOptions('Dukaten', 'Treasury', '#ffc107')
+                });
+                break;
+
+            case 'military':
+                // Armee-Balken + Force-Limit-Linie (Combo-Chart)
+                activeChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: d.labels,
+                        datasets: [
+                            { label: 'Armeegröße',  data: d.army,       backgroundColor: '#ffc107' },
+                            { label: 'Force Limit', data: d.forceLimit, type: 'line',
+                              borderColor: '#adb5bd', backgroundColor: 'transparent',
+                              tension: 0.3, pointRadius: 5 },
+                            { label: 'Manpower (k)', data: d.manpower,  backgroundColor: '#0dcaf0',
+                              type: 'line', borderColor: '#0dcaf0', fill: false, tension: 0.3, yAxisID: 'y2' }
+                        ]
+                    },
+                    options: groupedOptions('Einheiten', 'Manpower (k)', '#0dcaf0')
+                });
+                break;
+
+            case 'mana':
+                // Gestapelter Balken: ADM + DIP + MIL
+                activeChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: d.labels,
+                        datasets: [
+                            { label: 'ADM generiert', data: d.adm, backgroundColor: '#64b5f6' },
+                            { label: 'DIP generiert', data: d.dip, backgroundColor: '#81c784' },
+                            { label: 'MIL generiert', data: d.mil, backgroundColor: '#ef9a9a' }
+                        ]
+                    },
+                    options: stackedOptions('Mana-Punkte')
+                });
+                break;
+
+            case 'spending':
+                // Gestapelter Balken: Ausgaben-Kategorien
+                activeChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: d.labels,
+                        datasets: [
+                            { label: 'Armee',    data: d.army,      backgroundColor: '#e53935' },
+                            { label: 'Marine',   data: d.navy,      backgroundColor: '#1e88e5' },
+                            { label: 'Gebäude',  data: d.buildings, backgroundColor: '#43a047' },
+                            { label: 'Sonstiges',data: d.other,     backgroundColor: '#fb8c00' }
+                        ]
+                    },
+                    options: stackedOptions('Dukaten/Monat')
+                });
+                break;
+
+            case 'ruler':
+                // Gruppierter Balken: ADM, DIP, MIL nebeneinander
+                activeChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: d.labels,
+                        datasets: [
+                            { label: 'ADM', data: d.adm, backgroundColor: '#64b5f6' },
+                            { label: 'DIP', data: d.dip, backgroundColor: '#81c784' },
+                            { label: 'MIL', data: d.mil, backgroundColor: '#ef9a9a' }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { labels: { color: '#ccc' } } },
+                        scales: {
+                            x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                            y: { min: 0, max: 6, ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                        }
+                    }
+                });
+                break;
+        }
+    }
+
+    /** Erstellt Chart.js-Optionen für ein Combo-Chart (Bar + Line, 2 Y-Achsen). */
+    function groupedOptions(yLabel, y2Label, y2Color) {
+        return {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#ccc' } } },
+            scales: {
+                x:  { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                y:  { ticks: { color: '#aaa' }, grid: { color: '#333' }, title: { display: true, text: yLabel, color: '#aaa' } },
+                y2: { position: 'right', ticks: { color: y2Color }, grid: { drawOnChartArea: false },
+                      title: { display: true, text: y2Label, color: y2Color } }
+            }
+        };
+    }
+
+    /** Erstellt Chart.js-Optionen für ein gestapeltes Balkendiagramm. */
+    function stackedOptions(yLabel) {
+        return {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#ccc' } } },
+            scales: {
+                x: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                y: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' },
+                     title: { display: true, text: yLabel, color: '#aaa' } }
+            }
+        };
+    }
+
+    // Beim Laden: Standard-Chart (Wirtschaft) anzeigen
+    switchChart('economy', document.querySelector('#chartTypeBtns .btn'));
+</script>
+}

@@ -1,0 +1,291 @@
+@model EconomyViewModel
+@{
+    ViewData["Title"] = "Wirtschaft";
+    ViewBag.SaveId = Model.SaveGameId;
+    ViewBag.GameDate = Model.GameDate;
+}
+
+<div class="page-header mb-4">
+    <h2><i class="bi bi-currency-euro me-2 text-warning"></i>Wirtschafts-Dashboard
+        <small class="text-muted fs-6 ms-2">@Model.GameDate</small>
+    </h2>
+    <p class="text-muted">Einnahmen, Ausgaben und Treasury der mächtigsten Nationen</p>
+</div>
+
+<!-- Suchleiste -->
+<div class="row mb-3">
+    <div class="col-md-5">
+        <form method="get" class="d-flex gap-2">
+            <input type="hidden" name="saveId" value="@Model.SaveGameId" />
+            <input type="text" name="search" value="@Model.SearchTerm"
+                   class="form-control form-control-dark" placeholder="Nation suchen..." />
+            <button type="submit" class="btn btn-warning">
+                <i class="bi bi-search"></i>
+            </button>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <a href="/Economy?saveId=@Model.SaveGameId" class="btn btn-outline-secondary">
+                    <i class="bi bi-x"></i>
+                </a>
+            }
+        </form>
+    </div>
+    <div class="col-md-3">
+        <div class="btn-group">
+            <a href="/Economy?saveId=@Model.SaveGameId" class="btn btn-sm btn-outline-warning">Alle</a>
+            <a href="/Economy?saveId=@Model.SaveGameId&filter=human" class="btn btn-sm btn-outline-warning">Nur Spieler</a>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Karten (Top 3) -->
+@if (Model.TopCountries.Any())
+{
+    <div class="row g-3 mb-4">
+        @foreach (var c in Model.TopCountries.Take(3))
+        {
+            <div class="col-md-4">
+                <div class="kpi-card @(c.IsHuman ? "kpi-human" : "")">
+                    <div class="kpi-header">
+                        <span class="nation-tag">@c.Tag</span>
+                        @if (c.IsHuman && c.PlayerName != null)
+                        {
+                            <span class="player-badge"><i class="bi bi-person-fill"></i> @c.PlayerName</span>
+                        }
+                    </div>
+                    <h5 class="nation-name">@c.Name</h5>
+                    <div class="row text-center mt-2">
+                        <div class="col-4">
+                            <div class="kpi-value text-warning">@c.MonthlyIncome.ToString("N1")</div>
+                            <div class="kpi-label">Einnahmen/M</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="kpi-value @(c.Profit >= 0 ? "text-success" : "text-danger")">
+                                @c.Profit.ToString("+N1;-N1;0")
+                            </div>
+                            <div class="kpi-label">Profit/M</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="kpi-value text-info">@c.Treasury.ToString("N0")</div>
+                            <div class="kpi-label">Treasury</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between">
+                <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i>Monatliche Einnahmen (Top 15)</h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-warning active" onclick="loadIncomeChart()">Einnahmen</button>
+                    <button class="btn btn-outline-warning" onclick="loadTreasuryChart()">Treasury</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="incomeChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-pie-chart-fill me-2 text-warning"></i>Einnahmenquellen
+                    @if (Model.TopCountries.Any())
+                    {
+                        <small class="text-muted">(Top Nation)</small>
+                    }
+                </h6>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="incomePieChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabelle -->
+<div class="card dashboard-card">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-table me-2 text-warning"></i>Detailübersicht</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm mb-0">
+                <thead class="table-header-sticky">
+                    <tr>
+                        <th>Nation</th>
+                        <th>Spieler</th>
+                        <th class="text-end">Treasury</th>
+                        <th class="text-end">Einnahmen/M</th>
+                        <th class="text-end">Ausgaben/M</th>
+                        <th class="text-end">Profit/M</th>
+                        <th>Einnahmen-Aufschlüsselung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.TopCountries)
+                    {
+                        <tr class="@(c.IsHuman ? "human-row" : "")">
+                            <td>
+                                <span class="nation-tag-sm">@c.Tag</span>
+                                @c.Name
+                            </td>
+                            <td>
+                                @if (c.IsHuman && c.PlayerName != null)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-person-fill me-1"></i>@c.PlayerName
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-end text-info">@c.Treasury.ToString("N0") ⚜</td>
+                            <td class="text-end text-success">+@c.MonthlyIncome.ToString("N1")</td>
+                            <td class="text-end text-danger">-@c.MonthlyExpenses.ToString("N1")</td>
+                            <td class="text-end @(c.Profit >= 0 ? "text-success" : "text-danger") fw-bold">
+                                @c.Profit.ToString("+N1;-N1;0")
+                            </td>
+                            <td>
+                                @{
+                                    double total = c.IncomeTax + c.IncomeProduction + c.IncomeTrade + c.IncomeGold;
+                                    if (total > 0)
+                                    {
+                                        <div class="income-bar">
+                                            <div class="income-seg tax" style="width:@((c.IncomeTax/total*100).ToString("N0"))%"
+                                                 title="Steuern: @c.IncomeTax.ToString("N1")"></div>
+                                            <div class="income-seg prod" style="width:@((c.IncomeProduction/total*100).ToString("N0"))%"
+                                                 title="Produktion: @c.IncomeProduction.ToString("N1")"></div>
+                                            <div class="income-seg trade" style="width:@((c.IncomeTrade/total*100).ToString("N0"))%"
+                                                 title="Handel: @c.IncomeTrade.ToString("N1")"></div>
+                                            <div class="income-seg gold" style="width:@((c.IncomeGold/total*100).ToString("N0"))%"
+                                                 title="Gold: @c.IncomeGold.ToString("N1")"></div>
+                                        </div>
+                                        <small class="text-muted">
+                                            <span class="text-tax">Steuern</span> /
+                                            <span class="text-prod">Prod</span> /
+                                            <span class="text-trade">Handel</span> /
+                                            <span class="text-gold">Gold</span>
+                                        </small>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let incomeChart = null;
+    let pieChart = null;
+    const saveId = @Model.SaveGameId;
+
+    // Balkendiagramm: Einnahmen nach Kategorien
+    async function loadIncomeChart() {
+        const res = await fetch(`/Economy/ChartData?saveId=${saveId}&type=income`);
+        const d = await res.json();
+
+        if (incomeChart) incomeChart.destroy();
+        const ctx = document.getElementById('incomeChart').getContext('2d');
+        incomeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: d.labels,
+                datasets: [
+                    { label: 'Steuern', data: d.tax, backgroundColor: '#f0c040' },
+                    { label: 'Produktion', data: d.production, backgroundColor: '#4caf50' },
+                    { label: 'Handel', data: d.trade, backgroundColor: '#2196f3' },
+                    { label: 'Gold', data: d.gold, backgroundColor: '#ff9800' }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#ccc' } } },
+                scales: {
+                    x: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                    y: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+            }
+        });
+    }
+
+    // Balkendiagramm: Treasury
+    async function loadTreasuryChart() {
+        const res = await fetch(`/Economy/ChartData?saveId=${saveId}&type=treasury`);
+        const d = await res.json();
+
+        if (incomeChart) incomeChart.destroy();
+        const ctx = document.getElementById('incomeChart').getContext('2d');
+        incomeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: d.labels,
+                datasets: [{ label: 'Treasury (Dukaten)', data: d.values, backgroundColor: '#ffc107' }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#ccc' } } },
+                scales: {
+                    x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                    y: { ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+            }
+        });
+    }
+
+    // Tortendiagramm: Top-Nation Einnahmenquellen
+    function loadPieChart() {
+        @if (Model.TopCountries.Any())
+        {
+            var top = Model.TopCountries.First();
+            <text>
+            if (pieChart) pieChart.destroy();
+            const ctx2 = document.getElementById('incomePieChart').getContext('2d');
+            pieChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Steuern', 'Produktion', 'Handel', 'Gold'],
+                    datasets: [{
+                        data: [
+                            @top.IncomeTax.ToString("N1", System.Globalization.CultureInfo.InvariantCulture),
+                            @top.IncomeProduction.ToString("N1", System.Globalization.CultureInfo.InvariantCulture),
+                            @top.IncomeTrade.ToString("N1", System.Globalization.CultureInfo.InvariantCulture),
+                            @top.IncomeGold.ToString("N1", System.Globalization.CultureInfo.InvariantCulture)
+                        ],
+                        backgroundColor: ['#f0c040','#4caf50','#2196f3','#ff9800'],
+                        borderColor: '#1a1a2e',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#ccc' } },
+                        title: {
+                            display: true,
+                            text: '@top.Name',
+                            color: '#ffc107'
+                        }
+                    }
+                }
+            });
+            </text>
+        }
+    }
+
+    loadIncomeChart();
+    loadPieChart();
+</script>
+}

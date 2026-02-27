@@ -1,0 +1,215 @@
+@model ManaViewModel
+@{
+    ViewData["Title"] = "Mana-Nutzung";
+    ViewBag.SaveId = Model.SaveGameId;
+    ViewBag.GameDate = Model.GameDate;
+}
+
+<div class="page-header mb-4">
+    <h2><i class="bi bi-stars me-2 text-warning"></i>Mana-Dashboard
+        <small class="text-muted fs-6 ms-2">@Model.GameDate</small>
+    </h2>
+    <p class="text-muted">ADM / DIP / MIL Mana-Generierung und Ausgaben-Kategorien</p>
+</div>
+
+<!-- Legende der Mana-Typen -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="mana-legend-card adm-card">
+            <i class="bi bi-book-fill fs-3"></i>
+            <div>
+                <strong>ADM Power</strong>
+                <div class="small text-muted">Technologie · Ideen · Stabilität · Kernland</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="mana-legend-card dip-card">
+            <i class="bi bi-chat-square-dots-fill fs-3"></i>
+            <div>
+                <strong>DIP Power</strong>
+                <div class="small text-muted">Technologie · Ideen · Diplomatie · Annexion</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="mana-legend-card mil-card">
+            <i class="bi bi-sword fs-3"></i>
+            <div>
+                <strong>MIL Power</strong>
+                <div class="small text-muted">Technologie · Ideen · Generale · Belagerung</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Suche -->
+<div class="row mb-3">
+    <div class="col-md-5">
+        <form method="get" class="d-flex gap-2">
+            <input type="hidden" name="saveId" value="@Model.SaveGameId" />
+            <input type="text" name="search" value="@Model.SearchTerm"
+                   class="form-control form-control-dark" placeholder="Nation suchen..." />
+            <button type="submit" class="btn btn-warning"><i class="bi bi-search"></i></button>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <a href="/Mana?saveId=@Model.SaveGameId" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            }
+        </form>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i>Mana-Ausgaben nach Kategorie</h6>
+                <div class="btn-group btn-group-sm" id="manaTypeBtns">
+                    <button class="btn btn-outline-warning active" onclick="loadManaChart('adm', this)">ADM</button>
+                    <button class="btn btn-outline-warning" onclick="loadManaChart('dip', this)">DIP</button>
+                    <button class="btn btn-outline-warning" onclick="loadManaChart('mil', this)">MIL</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="manaChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabelle -->
+<div class="card dashboard-card">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-table me-2 text-warning"></i>Mana-Übersicht</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="align-middle">Nation</th>
+                        <th rowspan="2" class="align-middle">Spieler</th>
+                        <th class="text-center text-adm" colspan="2">ADM</th>
+                        <th class="text-center text-dip" colspan="2">DIP</th>
+                        <th class="text-center text-mil" colspan="2">MIL</th>
+                    </tr>
+                    <tr>
+                        <th class="text-center text-adm small">Generiert</th>
+                        <th class="text-center text-adm small">Ausgegeben</th>
+                        <th class="text-center text-dip small">Generiert</th>
+                        <th class="text-center text-dip small">Ausgegeben</th>
+                        <th class="text-center text-mil small">Generiert</th>
+                        <th class="text-center text-mil small">Ausgegeben</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Countries)
+                    {
+                        <tr class="@(c.IsHuman ? "human-row" : "")">
+                            <td><span class="nation-tag-sm">@c.Tag</span> @c.Name</td>
+                            <td>
+                                @if (c.IsHuman && c.PlayerName != null)
+                                {
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-person-fill me-1"></i>@c.PlayerName</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <!-- ADM -->
+                            <td class="text-center text-adm">@c.TotalAdmGenerated</td>
+                            <td class="text-center">
+                                <div class="mana-breakdown">
+                                    <span class="mana-seg" style="color:#ffd54f" title="Tech">T:@c.AdmSpentTech</span>
+                                    <span class="mana-seg" style="color:#aed581" title="Ideen">I:@c.AdmSpentIdeas</span>
+                                    <span class="mana-seg" style="color:#4fc3f7" title="Stabilität">S:@c.AdmSpentStability</span>
+                                </div>
+                            </td>
+                            <!-- DIP -->
+                            <td class="text-center text-dip">@c.TotalDipGenerated</td>
+                            <td class="text-center">
+                                <div class="mana-breakdown">
+                                    <span class="mana-seg" style="color:#ffd54f" title="Tech">T:@c.DipSpentTech</span>
+                                    <span class="mana-seg" style="color:#aed581" title="Ideen">I:@c.DipSpentIdeas</span>
+                                    <span class="mana-seg" style="color:#80cbc4" title="Diplomatie">D:@c.DipSpentDiplomacy</span>
+                                </div>
+                            </td>
+                            <!-- MIL -->
+                            <td class="text-center text-mil">@c.TotalMilGenerated</td>
+                            <td class="text-center">
+                                <div class="mana-breakdown">
+                                    <span class="mana-seg" style="color:#ffd54f" title="Tech">T:@c.MilSpentTech</span>
+                                    <span class="mana-seg" style="color:#aed581" title="Ideen">I:@c.MilSpentIdeas</span>
+                                    <span class="mana-seg" style="color:#ef9a9a" title="Generale">G:@c.MilSpentLeaders</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- Legende Tabelle -->
+        <div class="p-2 border-top" style="border-color:#333 !important;">
+            <small class="text-muted">
+                <b>T</b>=Technologie &nbsp; <b>I</b>=Ideen &nbsp; <b>S</b>=Stabilität &nbsp;
+                <b>D</b>=Diplomatie &nbsp; <b>G</b>=Generale
+            </small>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const saveId = @Model.SaveGameId;
+    let manaChart = null;
+
+    async function loadManaChart(type, btn) {
+        // Aktiven Button markieren
+        document.querySelectorAll('#manaTypeBtns .btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const res = await fetch(`/Mana/ChartData?saveId=${saveId}&manaType=${type}`);
+        const d = await res.json();
+        if (manaChart) manaChart.destroy();
+
+        const colors = {
+            adm: ['#ffd54f', '#aed581', '#4fc3f7', '#ce93d8'],
+            dip: ['#ffd54f', '#aed581', '#80cbc4', '#ce93d8'],
+            mil: ['#ffd54f', '#aed581', '#ef9a9a', '#ce93d8']
+        };
+        const labels = {
+            adm: ['Technologie', 'Ideen', 'Stabilität', 'Sonstiges'],
+            dip: ['Technologie', 'Ideen', 'Diplomatie', 'Sonstiges'],
+            mil: ['Technologie', 'Ideen', 'Generale', 'Sonstiges']
+        };
+        const keys = {
+            adm: ['tech', 'ideas', 'stability', 'other'],
+            dip: ['tech', 'ideas', 'diplomacy', 'other'],
+            mil: ['tech', 'ideas', 'leaders', 'other']
+        };
+
+        const datasets = keys[type].map((k, i) => ({
+            label: labels[type][i],
+            data: d[k] || [],
+            backgroundColor: colors[type][i]
+        }));
+
+        manaChart = new Chart(document.getElementById('manaChart').getContext('2d'), {
+            type: 'bar',
+            data: { labels: d.labels, datasets },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#ccc' } } },
+                scales: {
+                    x: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                    y: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } }
+                }
+            }
+        });
+    }
+
+    loadManaChart('adm', document.querySelector('#manaTypeBtns .btn'));
+</script>
+}

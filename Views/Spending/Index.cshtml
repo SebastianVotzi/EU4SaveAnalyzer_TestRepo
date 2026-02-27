@@ -1,0 +1,195 @@
+@model SpendingViewModel
+@{
+    ViewData["Title"] = "Spending";
+    ViewBag.SaveId = Model.SaveGameId;
+    ViewBag.GameDate = Model.GameDate;
+}
+
+<div class="page-header mb-4">
+    <h2><i class="bi bi-pie-chart-fill me-2 text-warning"></i>Spending-Dashboard
+        <small class="text-muted fs-6 ms-2">@Model.GameDate</small>
+    </h2>
+    <p class="text-muted">Monatliche Ausgaben aufgeteilt nach Kategorien</p>
+</div>
+
+<!-- Suche -->
+<div class="row mb-3">
+    <div class="col-md-5">
+        <form method="get" class="d-flex gap-2">
+            <input type="hidden" name="saveId" value="@Model.SaveGameId" />
+            <input type="text" name="search" value="@Model.SearchTerm"
+                   class="form-control form-control-dark" placeholder="Nation suchen..." />
+            <button type="submit" class="btn btn-warning"><i class="bi bi-search"></i></button>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <a href="/Spending?saveId=@Model.SaveGameId" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            }
+        </form>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i>Ausgaben-Aufschlüsselung (Top 15)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="spendingChart" height="110"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-pie-chart-fill me-2 text-warning"></i>Detailansicht Nation</h6>
+                <select id="countrySelect" class="form-select form-select-sm" style="width:auto; background:#2a2a3e; color:#fff; border-color:#444;">
+                    @foreach (var c in Model.Countries.Take(20))
+                    {
+                        <option value="@c.Tag">@c.Name (@c.Tag)</option>
+                    }
+                </select>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="detailPieChart" height="230"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Legende -->
+<div class="d-flex gap-3 mb-3">
+    <span class="legend-dot" style="background:#e53935"></span><small>Armee</small>
+    <span class="legend-dot" style="background:#1e88e5"></small></span><small>Marine</small>
+    <span class="legend-dot" style="background:#43a047"></span><small>Gebäude</small>
+    <span class="legend-dot" style="background:#fb8c00"></span><small>Sonstiges</small>
+</div>
+
+<!-- Tabelle -->
+<div class="card dashboard-card">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-table me-2 text-warning"></i>Ausgaben-Tabelle</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Nation</th>
+                        <th>Spieler</th>
+                        <th class="text-end">Gesamt/M</th>
+                        <th>Aufschlüsselung</th>
+                        <th class="text-end">Armee</th>
+                        <th class="text-end">Marine</th>
+                        <th class="text-end">Gebäude</th>
+                        <th class="text-end">Sonstiges</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Countries)
+                    {
+                        <tr class="@(c.IsHuman ? "human-row" : "")">
+                            <td><span class="nation-tag-sm">@c.Tag</span> @c.Name</td>
+                            <td>
+                                @if (c.IsHuman && c.PlayerName != null)
+                                {
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-person-fill me-1"></i>@c.PlayerName</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-end text-danger fw-bold">@c.TotalExpenses.ToString("N1")</td>
+                            <td style="min-width:150px;">
+                                <div class="spending-bar">
+                                    <div style="width:@c.ArmyPercent.ToString("N0")%; background:#e53935;" title="Armee @c.ArmyPercent.ToString("N0")%"></div>
+                                    <div style="width:@c.NavyPercent.ToString("N0")%; background:#1e88e5;" title="Marine @c.NavyPercent.ToString("N0")%"></div>
+                                    <div style="width:@c.BuildingsPercent.ToString("N0")%; background:#43a047;" title="Gebäude @c.BuildingsPercent.ToString("N0")%"></div>
+                                    <div style="width:@c.OtherPercent.ToString("N0")%; background:#fb8c00;" title="Sonstiges @c.OtherPercent.ToString("N0")%"></div>
+                                </div>
+                            </td>
+                            <td class="text-end" style="color:#e57373;">@c.ExpenseArmy.ToString("N1")</td>
+                            <td class="text-end" style="color:#64b5f6;">@c.ExpenseNavy.ToString("N1")</td>
+                            <td class="text-end" style="color:#81c784;">@c.ExpenseBuildings.ToString("N1")</td>
+                            <td class="text-end" style="color:#ffb74d;">@c.ExpenseOther.ToString("N1")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const saveId = @Model.SaveGameId;
+    let pieChart = null;
+
+    // Gestapeltes Balkendiagramm aller Nationen
+    const countries = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.Countries.Select(c => new {
+            name = c.Name,
+            army = Math.Round(c.ExpenseArmy, 1),
+            navy = Math.Round(c.ExpenseNavy, 1),
+            buildings = Math.Round(c.ExpenseBuildings, 1),
+            other = Math.Round(c.ExpenseOther, 1)
+        })
+    ));
+
+    new Chart(document.getElementById('spendingChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: countries.map(c => c.name),
+            datasets: [
+                { label: 'Armee', data: countries.map(c => c.army), backgroundColor: '#e53935' },
+                { label: 'Marine', data: countries.map(c => c.navy), backgroundColor: '#1e88e5' },
+                { label: 'Gebäude', data: countries.map(c => c.buildings), backgroundColor: '#43a047' },
+                { label: 'Sonstiges', data: countries.map(c => c.other), backgroundColor: '#fb8c00' }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#ccc' } } },
+            scales: {
+                x: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                y: { stacked: true, ticks: { color: '#aaa' }, grid: { color: '#333' } }
+            }
+        }
+    });
+
+    // Detail-Tortendiagramm per AJAX
+    async function loadDetailPie(tag) {
+        const res = await fetch(`/Spending/CountryBreakdown?saveId=${saveId}&tag=${tag}`);
+        if (!res.ok) return;
+        const d = await res.json();
+        if (pieChart) pieChart.destroy();
+        pieChart = new Chart(document.getElementById('detailPieChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Armee', 'Marine', 'Gebäude', 'Sonstiges'],
+                datasets: [{
+                    data: [d.army, d.navy, d.buildings, d.other],
+                    backgroundColor: ['#e53935','#1e88e5','#43a047','#fb8c00'],
+                    borderColor: '#1a1a2e',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#ccc' } },
+                    title: { display: true, text: d.name, color: '#ffc107' }
+                }
+            }
+        });
+    }
+
+    document.getElementById('countrySelect').addEventListener('change', e => loadDetailPie(e.target.value));
+
+    // Erstes Land laden
+    const firstTag = document.getElementById('countrySelect')?.value;
+    if (firstTag) loadDetailPie(firstTag);
+</script>
+}

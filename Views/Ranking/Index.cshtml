@@ -1,0 +1,279 @@
+@model RankingViewModel
+@{
+    ViewData["Title"] = "Nationen-Ranking";
+    ViewBag.SaveId = Model.SaveGameId;
+    ViewBag.GameDate = Model.GameDate;
+}
+
+<div class="page-header mb-4">
+    <h2><i class="bi bi-trophy-fill me-2 text-warning"></i>Nationen-Ranking
+        <small class="text-muted fs-6 ms-2">@Model.GameDate</small>
+    </h2>
+    <p class="text-muted">Vergleich aller Nationen in den wichtigsten Statistiken</p>
+</div>
+
+<!-- Suche & Sortierung -->
+<div class="row mb-3 g-2">
+    <div class="col-md-4">
+        <form method="get" class="d-flex gap-2">
+            <input type="hidden" name="saveId" value="@Model.SaveGameId" />
+            <input type="hidden" name="sortBy" value="@Model.SortBy" />
+            <input type="text" name="search" value="@Model.SearchTerm"
+                   class="form-control form-control-dark" placeholder="Nation suchen..." />
+            <button type="submit" class="btn btn-warning"><i class="bi bi-search"></i></button>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=@Model.SortBy" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            }
+        </form>
+    </div>
+    <div class="col-md-8">
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="text-muted align-self-center small me-1">Sortieren:</span>
+            @foreach (var (key, label, icon) in new[] {
+                ("army", "Armee", "shield-fill"),
+                ("forcelimit", "Force Limit", "bar-chart-fill"),
+                ("manpower", "Manpower", "people-fill"),
+                ("economy", "Wirtschaft", "currency-euro"),
+                ("provinces", "Provinzen", "geo-fill"),
+                ("ruler", "Herrscher", "crown-fill"),
+                ("mana", "Mana", "stars"),
+                ("dev", "Entwicklung", "graph-up")
+            })
+            {
+                <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=@key&search=@Model.SearchTerm"
+                   class="btn btn-sm @(Model.SortBy == key ? "btn-warning" : "btn-outline-secondary")">
+                    <i class="bi bi-@icon me-1"></i>@label
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Radar Chart für Top 5 -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-5">
+        <div class="card dashboard-card h-100">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-diagram-3-fill me-2 text-warning"></i>Nationen-Vergleich (Top 5)</h6>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="radarChart" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card dashboard-card h-100">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i>Rangliste: @Model.SortBy</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="rankingChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Haupttabelle -->
+<div class="card dashboard-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm mb-0" id="rankingTable">
+                <thead class="table-header-sticky">
+                    <tr>
+                        <th>Rang</th>
+                        <th>Nation</th>
+                        <th>
+                            <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=army" class="sort-link @(Model.SortBy=="army"?"active":"")">
+                                Armee <i class="bi bi-caret-down-fill"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=forcelimit" class="sort-link @(Model.SortBy=="forcelimit"?"active":"")">
+                                FL <i class="bi bi-caret-down-fill"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=manpower" class="sort-link @(Model.SortBy=="manpower"?"active":"")">
+                                Manpower <i class="bi bi-caret-down-fill"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=economy" class="sort-link @(Model.SortBy=="economy"?"active":"")">
+                                Einkommen <i class="bi bi-caret-down-fill"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=provinces" class="sort-link @(Model.SortBy=="provinces"?"active":"")">
+                                Provinzen <i class="bi bi-caret-down-fill"></i>
+                            </a>
+                        </th>
+                        <th class="text-center">
+                            <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=ruler" class="sort-link @(Model.SortBy=="ruler"?"active":"")">
+                                Herrscher Ø <i class="bi bi-caret-down-fill"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="/Ranking?saveId=@Model.SaveGameId&sortBy=mana" class="sort-link @(Model.SortBy=="mana"?"active":"")">
+                                Mana Gen. <i class="bi bi-caret-down-fill"></i>
+                            </a>
+                        </th>
+                        <th>Spieler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model.Rankings)
+                    {
+                        string rankClass = entry.Rank switch {
+                            1 => "rank-gold",
+                            2 => "rank-silver",
+                            3 => "rank-bronze",
+                            _ => ""
+                        };
+                        <tr class="@(entry.IsHuman ? "human-row" : "")">
+                            <td>
+                                <span class="rank-badge @rankClass">
+                                    @if (entry.Rank <= 3) {
+                                        <i class="bi bi-trophy-fill"></i>
+                                    }
+                                    @entry.Rank
+                                </span>
+                            </td>
+                            <td>
+                                <span class="nation-tag-sm">@entry.Tag</span>
+                                @entry.Name
+                            </td>
+                            <td class="@(Model.SortBy=="army"?"text-warning fw-bold":"")">@entry.ArmySize</td>
+                            <td class="@(Model.SortBy=="forcelimit"?"text-warning fw-bold":"")">@entry.ForceLimit</td>
+                            <td class="@(Model.SortBy=="manpower"?"text-warning fw-bold":"")">@entry.Manpower.ToString("N1")k</td>
+                            <td class="@(Model.SortBy=="economy"?"text-warning fw-bold":"")">@entry.MonthlyIncome.ToString("N1")</td>
+                            <td class="@(Model.SortBy=="provinces"?"text-warning fw-bold":"")">@entry.ProvinceCount</td>
+                            <td class="text-center @(Model.SortBy=="ruler"?"text-warning fw-bold":"")">
+                                <span title="ADM:@entry.RulerAdm DIP:@entry.RulerDip MIL:@entry.RulerMil">
+                                    @entry.RulerAvg.ToString("N1")
+                                    <small class="text-muted">(@entry.RulerAdm/@entry.RulerDip/@entry.RulerMil)</small>
+                                </span>
+                            </td>
+                            <td class="@(Model.SortBy=="mana"?"text-warning fw-bold":"")">
+                                <span class="text-adm small">@entry.TotalAdmGenerated</span>/
+                                <span class="text-dip small">@entry.TotalDipGenerated</span>/
+                                <span class="text-mil small">@entry.TotalMilGenerated</span>
+                            </td>
+                            <td>
+                                @if (entry.IsHuman && entry.PlayerName != null)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-person-fill me-1"></i>@entry.PlayerName
+                                    </span>
+                                }
+                                else
+                                {
+                                    <!-- KI-Nationen: leere Zelle wie gefordert -->
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const entries = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.Rankings.Take(10).Select(e => new {
+            name = e.Name,
+            army = e.ArmySize,
+            fl = e.ForceLimit,
+            manpower = e.Manpower,
+            income = Math.Round(e.MonthlyIncome, 1),
+            provinces = e.ProvinceCount,
+            rulerAvg = Math.Round(e.RulerAvg, 1),
+            mana = e.TotalManaGenerated
+        })
+    ));
+
+    const top5 = entries.slice(0, 5);
+    const sortBy = "@Model.SortBy";
+
+    // Radar Chart: Top 5 Nationen
+    // Normalisiere Werte auf 0-100 für bessere Darstellung
+    function normalize(arr) {
+        const max = Math.max(...arr, 1);
+        return arr.map(v => Math.round((v / max) * 100));
+    }
+
+    const radarDatasets = top5.map((e, i) => {
+        const colors = ['#ffc107','#4caf50','#2196f3','#f44336','#9c27b0'];
+        return {
+            label: e.name,
+            data: [
+                normalize(top5.map(x => x.army))[i],
+                normalize(top5.map(x => x.income))[i],
+                normalize(top5.map(x => x.provinces))[i],
+                normalize(top5.map(x => x.manpower))[i],
+                normalize(top5.map(x => x.rulerAvg))[i]
+            ],
+            borderColor: colors[i],
+            backgroundColor: colors[i] + '22',
+            pointBackgroundColor: colors[i]
+        };
+    });
+
+    new Chart(document.getElementById('radarChart').getContext('2d'), {
+        type: 'radar',
+        data: {
+            labels: ['Armee', 'Wirtschaft', 'Provinzen', 'Manpower', 'Herrscher'],
+            datasets: radarDatasets
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#ccc', font: { size: 11 } } } },
+            scales: {
+                r: {
+                    ticks: { color: '#aaa', backdropColor: 'transparent' },
+                    grid: { color: '#333' },
+                    pointLabels: { color: '#ccc' },
+                    suggestedMin: 0, suggestedMax: 100
+                }
+            }
+        }
+    });
+
+    // Balkendiagramm nach aktiver Sortierung
+    const sortMap = {
+        army: { key: 'army', label: 'Armeegröße' },
+        forcelimit: { key: 'fl', label: 'Force Limit' },
+        manpower: { key: 'manpower', label: 'Manpower (k)' },
+        economy: { key: 'income', label: 'Einkommen/M' },
+        provinces: { key: 'provinces', label: 'Provinzen' },
+        ruler: { key: 'rulerAvg', label: 'Herrscher Ø' },
+        mana: { key: 'mana', label: 'Mana generiert' },
+        dev: { key: 'provinces', label: 'Provinzen' }
+    };
+
+    const curr = sortMap[sortBy] || sortMap.army;
+    new Chart(document.getElementById('rankingChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: entries.map(e => e.name),
+            datasets: [{
+                label: curr.label,
+                data: entries.map(e => e[curr.key]),
+                backgroundColor: '#ffc107'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                y: { ticks: { color: '#ccc' }, grid: { color: '#333' } }
+            }
+        }
+    });
+</script>
+}

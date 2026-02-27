@@ -1,0 +1,195 @@
+@model HomeViewModel
+@{
+    ViewData["Title"] = "EU4 Save Analyzer";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="hero-card p-4 rounded-3">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold text-white mb-2">
+                        <i class="bi bi-globe2 me-2 text-warning"></i>EU4 Save Analyzer
+                    </h1>
+                    <p class="text-light mb-0 fs-5">
+                        Lade deine Europa Universalis IV Save-Datei hoch und analysiere
+                        Wirtschaft, Militär, Mana-Nutzung, Kriege und mehr.
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <img src="https://img.icons8.com/color/120/globe.png" alt="Globe" style="opacity:0.3;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+@if (Model.SuccessMessage != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-4">
+
+    <!-- Upload Card -->
+    <div class="col-lg-4">
+        <div class="card dashboard-card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-cloud-upload-fill me-2 text-warning"></i>Save hochladen</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label text-light">EU4 Save-Datei (.eu4)</label>
+                        <div class="upload-zone" id="uploadZone">
+                            <input type="file" name="saveFile" id="saveFile"
+                                   accept=".eu4,.zip" class="d-none" required />
+                            <label for="saveFile" class="upload-label">
+                                <i class="bi bi-file-earmark-arrow-up fs-1 text-warning"></i>
+                                <p class="mt-2 mb-0 text-light">Klicken oder Datei hierher ziehen</p>
+                                <small class="text-muted">.eu4 Dateien, max. 500 MB</small>
+                            </label>
+                            <div id="fileName" class="text-success mt-2 d-none"></div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info py-2 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Hinweis:</strong> Nur normale Saves (kein Ironman).
+                        Komprimierte Saves (.eu4 als ZIP) werden automatisch entpackt.
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100 fw-bold">
+                        <i class="bi bi-play-fill me-2"></i>Analysieren
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Saved Games List -->
+    <div class="col-lg-8">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-collection-fill me-2 text-warning"></i>Gespeicherte Saves</h5>
+                <span class="badge bg-warning text-dark">@Model.SaveGames.Count</span>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.SaveGames.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <p class="text-muted mt-3">Noch keine Saves hochgeladen.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Dateiname</th>
+                                    <th>Spieldatum</th>
+                                    <th>Spieler</th>
+                                    <th>Nationen</th>
+                                    <th>Hochgeladen</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var save in Model.SaveGames)
+                                {
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-file-earmark-text me-1 text-warning"></i>
+                                            <span title="@save.FileName">
+                                                @(save.FileName.Length > 30 ? save.FileName[..30] + "…" : save.FileName)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-calendar3 me-1"></i>@save.GameDate
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(save.PlayerTag))
+                                            {
+                                                <span class="badge bg-warning text-dark">@save.PlayerTag</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">–</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">@save.CountryCount</span>
+                                        </td>
+                                        <td class="text-muted small">
+                                            @save.UploadedAt.ToString("dd.MM.yyyy HH:mm")
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="/Economy?saveId=@save.Id"
+                                                   class="btn btn-outline-warning btn-sm"
+                                                   title="Analysieren">
+                                                    <i class="bi bi-bar-chart-fill"></i>
+                                                </a>
+                                                <form asp-action="Delete" method="post" class="d-inline"
+                                                      onsubmit="return confirm('Save wirklich löschen?')">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@save.Id" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                            title="Löschen">
+                                                        <i class="bi bi-trash3"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Datei-Name im Upload-Bereich anzeigen
+    document.getElementById('saveFile').addEventListener('change', function(e) {
+        const fileNameDiv = document.getElementById('fileName');
+        if (this.files.length > 0) {
+            fileNameDiv.textContent = '✓ ' + this.files[0].name;
+            fileNameDiv.classList.remove('d-none');
+        }
+    });
+
+    // Drag & Drop
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const input = document.getElementById('saveFile');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+}
