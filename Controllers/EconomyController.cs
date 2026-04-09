@@ -16,33 +16,40 @@ public class EconomyController : Controller
     public EconomyController(AppDbContext db) => _db = db;
 
     /// <summary>Hauptansicht: Wirtschaftsübersicht mit Balken- und Tortendiagramm.</summary>
-    public async Task<IActionResult> Index(int saveId, string? search, string? filter)
+    public async Task<IActionResult> Index(int saveId, string? search, string? filter, int page = 1)
     {
         var save = await _db.SaveGames.FindAsync(saveId);
         if (save == null) return RedirectToAction("Index", "Home");
 
+        const int pageSize = 50;
+
         var query = _db.Countries
-            .Where(c => c.SaveGameId == saveId && c.MonthlyIncome > 0);
+            .Where(c => c.SaveGameId == saveId && c.TotalDevelopment > 0);
 
-        // Suchfilter: Nach Nationsname oder Tag
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(c =>
-                c.Name.Contains(search) || c.Tag.Contains(search));
+            query = query.Where(c => c.Name.Contains(search) || c.Tag.Contains(search));
 
-        // Nur menschliche Spieler anzeigen?
         if (filter == "human")
             query = query.Where(c => c.IsHuman);
 
+        int totalCount = await query.CountAsync();
+        int safePage   = Math.Max(1, Math.Min(page, (int)Math.Ceiling(totalCount / (double)pageSize)));
+
         var countries = await query
             .OrderByDescending(c => c.MonthlyIncome)
-            .Take(20)
+            .ThenByDescending(c => c.TotalDevelopment)
+            .Skip((safePage - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var vm = new EconomyViewModel
         {
-            SaveGameId = saveId,
-            GameDate = save.GameDate,
-            SearchTerm = search,
+            SaveGameId  = saveId,
+            GameDate    = save.GameDate,
+            SearchTerm  = search,
+            Page        = safePage,
+            PageSize    = pageSize,
+            TotalCount  = totalCount,
             TopCountries = countries.Select(c => new EconomyCountryData
             {
                 Tag = c.Tag,
@@ -73,7 +80,7 @@ public class EconomyController : Controller
     public async Task<IActionResult> ChartData(int saveId, string type = "income")
     {
         var countries = await _db.Countries
-            .Where(c => c.SaveGameId == saveId && c.MonthlyIncome > 0)
+            .Where(c => c.SaveGameId == saveId && c.TotalDevelopment > 0)
             .OrderByDescending(c => c.MonthlyIncome)
             .Take(15)
             .ToListAsync();

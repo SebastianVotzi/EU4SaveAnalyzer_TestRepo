@@ -18,17 +18,19 @@ public class SaveGameListItem
     public int CountryCount { get; set; }
 }
 
-/// <summary>ViewModel für das Wirtschafts-Dashboard.</summary>
+/// <summary>ViewModel für das Wirtschafts-Dashboard mit Pagination.</summary>
 public class EconomyViewModel
 {
     public int SaveGameId { get; set; }
     public string GameDate { get; set; } = string.Empty;
-
-    // Top-Nationen nach Einkommen
     public List<EconomyCountryData> TopCountries { get; set; } = new();
-
-    // Für Suchfilter
     public string? SearchTerm { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
+    public int TotalCount { get; set; }
+    public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasPrevPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
 }
 
 public class EconomyCountryData
@@ -49,15 +51,23 @@ public class EconomyCountryData
     public double ExpenseBuildings { get; set; }
     public double ExpenseOther { get; set; }
     public double Profit => MonthlyIncome - MonthlyExpenses;
+    /// <summary>Formatierter Profit-String mit Vorzeichen (z.B. "+12.3" oder "-5.6")</summary>
+    public string ProfitDisplay => (Profit >= 0 ? "+" : "") + Profit.ToString("N1");
 }
 
-/// <summary>ViewModel für das Militär-Dashboard.</summary>
+/// <summary>ViewModel für das Militär-Dashboard mit Pagination.</summary>
 public class MilitaryViewModel
 {
     public int SaveGameId { get; set; }
     public string GameDate { get; set; } = string.Empty;
     public List<MilitaryCountryData> Countries { get; set; } = new();
     public string? SearchTerm { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
+    public int TotalCount { get; set; }
+    public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasPrevPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
 }
 
 public class MilitaryCountryData
@@ -76,13 +86,19 @@ public class MilitaryCountryData
     public double ForceLimitUsage => ForceLimit > 0 ? (ArmySize / (double)ForceLimit) * 100 : 0;
 }
 
-/// <summary>ViewModel für das Ausgaben-Dashboard.</summary>
+/// <summary>ViewModel für das Ausgaben-Dashboard mit Pagination.</summary>
 public class SpendingViewModel
 {
     public int SaveGameId { get; set; }
     public string GameDate { get; set; } = string.Empty;
     public List<SpendingCountryData> Countries { get; set; } = new();
     public string? SearchTerm { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
+    public int TotalCount { get; set; }
+    public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasPrevPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
 }
 
 public class SpendingCountryData
@@ -102,13 +118,19 @@ public class SpendingCountryData
     public double OtherPercent => TotalExpenses > 0 ? (ExpenseOther / TotalExpenses) * 100 : 0;
 }
 
-/// <summary>ViewModel für das Mana-Dashboard.</summary>
+/// <summary>ViewModel für das Mana-Dashboard mit Pagination.</summary>
 public class ManaViewModel
 {
     public int SaveGameId { get; set; }
     public string GameDate { get; set; } = string.Empty;
     public List<ManaCountryData> Countries { get; set; } = new();
     public string? SearchTerm { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
+    public int TotalCount { get; set; }
+    public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasPrevPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
 }
 
 public class ManaCountryData
@@ -150,7 +172,7 @@ public class ManaCountryData
     public int TotalMilSpent => MilSpentTech + MilSpentIdeas + MilSpentLeaders + MilSpentOther;
 }
 
-/// <summary>ViewModel für das Kriegs-Dashboard.</summary>
+/// <summary>ViewModel für das Kriegs-Dashboard mit Pagination für vergangene Kriege.</summary>
 public class WarsViewModel
 {
     public int SaveGameId { get; set; }
@@ -158,6 +180,12 @@ public class WarsViewModel
     public List<WarData> ActiveWars { get; set; } = new();
     public List<WarData> PreviousWars { get; set; } = new();
     public string? SearchTerm { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 30;
+    public int TotalPreviousWars { get; set; }
+    public int TotalPages => (int)Math.Ceiling(TotalPreviousWars / (double)PageSize);
+    public bool HasPrevPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
 }
 
 public class WarData
@@ -194,7 +222,7 @@ public class WarData
     };
 }
 
-/// <summary>ViewModel für das Nationen-Ranking.</summary>
+/// <summary>ViewModel für das Nationen-Ranking mit Pagination.</summary>
 public class RankingViewModel
 {
     public int SaveGameId { get; set; }
@@ -202,6 +230,16 @@ public class RankingViewModel
     public List<RankingEntry> Rankings { get; set; } = new();
     public string SortBy { get; set; } = "army";
     public string? SearchTerm { get; set; }
+    /// <summary>Aktuelle Seite (1-basiert)</summary>
+    public int Page { get; set; } = 1;
+    /// <summary>Einträge pro Seite</summary>
+    public int PageSize { get; set; } = 50;
+    /// <summary>Gesamtanzahl der gefilterten Einträge (vor Pagination)</summary>
+    public int TotalCount { get; set; }
+    /// <summary>Gesamtanzahl der Seiten</summary>
+    public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasPrevPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
 }
 
 public class RankingEntry
@@ -225,4 +263,8 @@ public class RankingEntry
     public int TotalMilGenerated { get; set; }
     public int TotalManaGenerated => TotalAdmGenerated + TotalDipGenerated + TotalMilGenerated;
     public int TotalDevelopment { get; set; }
+    public int DevClicksAdm { get; set; }
+    public int DevClicksDip { get; set; }
+    public int DevClicksMil { get; set; }
+    public int TotalDevClicks => DevClicksAdm + DevClicksDip + DevClicksMil;
 }

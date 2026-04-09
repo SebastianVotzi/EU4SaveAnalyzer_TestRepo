@@ -65,6 +65,8 @@ public class PlayerData
 
     /// <summary>Monatlicher Gewinn/Verlust (Einnahmen minus Ausgaben).</summary>
     public double Profit => MonthlyIncome - MonthlyExpenses;
+    /// <summary>Formatierter Profit-String mit Vorzeichen.</summary>
+    public string ProfitDisplay => (Profit >= 0 ? "+" : "") + Profit.ToString("N1");
 
     // ---- Militär ----
 
@@ -197,4 +199,16 @@ public class PlayerData
     /// </summary>
     public double ArmyExpensePercent =>
         MonthlyExpenses > 0 ? Math.Round(ExpenseArmy / MonthlyExpenses * 100, 1) : 0;
+
+    /// <summary>ADM-Entwicklungsclicks (Mana in Provinzentwicklung investiert).</summary>
+    public int DevClicksAdm { get; set; }
+
+    /// <summary>DIP-Entwicklungsclicks.</summary>
+    public int DevClicksDip { get; set; }
+
+    /// <summary>MIL-Entwicklungsclicks.</summary>
+    public int DevClicksMil { get; set; }
+
+    /// <summary>Gesamte Entwicklungsclicks aller Mana-Typen.</summary>
+    public int TotalDevClicks => DevClicksAdm + DevClicksDip + DevClicksMil;
 }

@@ -128,7 +128,7 @@ else
                         </div>
                         <div class="player-stat">
                             <span class="ps-value @(player.Profit >= 0 ? "text-success" : "text-danger")">
-                                @player.Profit.ToString("+N1;-N1;0")
+                                @player.ProfitDisplay
                             </span>
                             <span class="ps-label">Profit/M</span>
                         </div>
@@ -141,12 +141,20 @@ else
                             <span class="ps-label">Force Limit</span>
                         </div>
                         <div class="player-stat">
+                            <span class="ps-value text-info">@player.NavySize</span>
+                            <span class="ps-label">Marine</span>
+                        </div>
+                        <div class="player-stat">
                             <span class="ps-value">@player.ProvinceCount</span>
                             <span class="ps-label">Provinzen</span>
                         </div>
                         <div class="player-stat">
                             <span class="ps-value">@player.RulerAvg.ToString("N1")</span>
                             <span class="ps-label">Herrscher Ø</span>
+                        </div>
+                        <div class="player-stat">
+                            <span class="ps-value text-warning">@player.TotalManaGenerated</span>
+                            <span class="ps-label">Mana gen.</span>
                         </div>
                     </div>
 
@@ -280,7 +288,7 @@ else
                             @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
                             {
                                 <td class="text-center @(i == bestIdx ? "best-cell" : "") @(p.Profit >= 0 ? "text-success" : "text-danger")">
-                                    @(i == bestIdx ? "🥇 " : "")@p.Profit.ToString("+N1;-N1;0")
+                                    @(i == bestIdx ? "🥇 " : "")@p.ProfitDisplay
                                 </td>
                             }
                         </tr>
@@ -386,6 +394,45 @@ else
                             }
                         </tr>
 
+                        <!-- === ENTWICKLUNGSCLICKS === -->
+                        <tr class="section-header">
+                            <td colspan="@(compareList.Count + 1)" class="text-warning small fw-bold py-1 px-3">
+                                <i class="bi bi-mouse2 me-1"></i>ENTWICKLUNGSCLICKS
+                            </td>
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.DevClicksAdm); }
+                        <tr>
+                            <td class="stat-label text-adm">ADM-Clicks</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-adm @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.DevClicksAdm</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.DevClicksDip); }
+                        <tr>
+                            <td class="stat-label text-dip">DIP-Clicks</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-dip @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.DevClicksDip</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.DevClicksMil); }
+                        <tr>
+                            <td class="stat-label text-mil">MIL-Clicks</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center text-mil @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.DevClicksMil</td>
+                            }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.TotalDevClicks); }
+                        <tr>
+                            <td class="stat-label fw-bold">Dev-Clicks Gesamt</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            {
+                                <td class="text-center fw-bold @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.TotalDevClicks</td>
+                            }
+                        </tr>
+
                         <!-- === MANA === -->
                         <tr class="section-header">
                             <td colspan="@(compareList.Count + 1)" class="text-warning small fw-bold py-1 px-3">
@@ -423,6 +470,37 @@ else
                             {
                                 <td class="text-center fw-bold @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.TotalManaGenerated</td>
                             }
+                        </tr>
+
+                        <!-- === ENTWICKLUNGSCLICKS === -->
+                        <tr class="section-header">
+                            <td colspan="@(compareList.Count + 1)" class="text-warning small fw-bold py-1 px-3">
+                                <i class="bi bi-mouse2 me-1"></i>ENTWICKLUNGSCLICKS (Mana für Dev ausgegeben)
+                            </td>
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.DevClicksAdm); }
+                        <tr>
+                            <td class="stat-label text-adm">ADM-Clicks</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            { <td class="text-center text-adm @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.DevClicksAdm</td> }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.DevClicksDip); }
+                        <tr>
+                            <td class="stat-label text-dip">DIP-Clicks</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            { <td class="text-center text-dip @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.DevClicksDip</td> }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.DevClicksMil); }
+                        <tr>
+                            <td class="stat-label text-mil">MIL-Clicks</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            { <td class="text-center text-mil @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.DevClicksMil</td> }
+                        </tr>
+                        @{ bestIdx = BestIdx(p => p.TotalDevClicks); }
+                        <tr>
+                            <td class="stat-label fw-bold">Dev-Clicks Gesamt</td>
+                            @foreach (var (p, i) in compareList.Select((x, i) => (x, i)))
+                            { <td class="text-center fw-bold @(i == bestIdx ? "best-cell" : "")">@(i == bestIdx ? "🥇 " : "")@p.TotalDevClicks</td> }
                         </tr>
                     </tbody>
                 </table>
@@ -485,8 +563,8 @@ else
      * Holt Daten per AJAX vom /PlayerComparison/ChartData-Endpunkt,
      * zerstört den alten Chart und erstellt einen neuen.
      *
-     * param {string} type   - Chart-Typ: economy, military, mana, spending, ruler
-     * param {HTMLElement} btn - Der geklickte Button (für active-Klasse)
+     * type {string}      - Chart-Typ: economy, military, mana, spending, ruler
+     * type {HTMLElement} - Der geklickte Button (für active-Klasse)
      */
     async function switchChart(type, btn) {
         // Aktiven Button markieren

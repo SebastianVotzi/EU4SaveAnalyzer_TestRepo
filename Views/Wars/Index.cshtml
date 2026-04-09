@@ -157,6 +157,13 @@
     </div>
 </div>
 
+@await Html.PartialAsync("_Pagination", new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) {
+    ["Page"]=Model.Page, ["TotalPages"]=Model.TotalPages,
+    ["HasPrev"]=Model.HasPrevPage, ["HasNext"]=Model.HasNextPage,
+    ["BaseUrl"]=$"/Wars?saveId={Model.SaveGameId}&search={Model.SearchTerm}",
+    ["TotalCount"]=Model.TotalPreviousWars, ["PageSize"]=Model.PageSize
+})
+
 @section Scripts {
 <script>
     // Verlust-Chart für die 10 blutigsten Kriege

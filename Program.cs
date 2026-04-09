@@ -9,8 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ============================================================
 
 // MVC mit Razor Views
-builder.Services.AddControllersWithViews()
-    .AddNewtonsoftJson(); // Für besseres JSON-Handling
+builder.Services.AddControllersWithViews();
 
 // Entity Framework Core mit SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -23,10 +22,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // EU4-spezifische Services (Scoped = pro Request neue Instanz)
 builder.Services.AddScoped<EU4SaveParser>();
 
-// Erhöhe das maximale Datei-Upload-Limit auf 500 MB
+// Maximales Datei-Upload-Limit auf 500 MB erhöhen
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 500 * 1024 * 1024; // 500 MB
+    options.MultipartBodyLengthLimit = 500 * 1024 * 1024;
 });
 
 // ============================================================
@@ -35,11 +34,11 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 
 var app = builder.Build();
 
-// Datenbank automatisch erstellen/migrieren beim Start
+// Datenbank automatisch erstellen beim Start
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated(); // Erstellt die DB falls sie nicht existiert
+    db.Database.EnsureCreated();
 }
 
 // Error Handling
@@ -49,7 +48,6 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // Produktions-Fehlerseite
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
@@ -58,7 +56,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Standard-Route: Home/Index
+// Standard-Route
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

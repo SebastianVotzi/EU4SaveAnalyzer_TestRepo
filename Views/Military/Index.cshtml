@@ -122,6 +122,13 @@
     </div>
 </div>
 
+@await Html.PartialAsync("_Pagination", new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) {
+    ["Page"]=Model.Page, ["TotalPages"]=Model.TotalPages,
+    ["HasPrev"]=Model.HasPrevPage, ["HasNext"]=Model.HasNextPage,
+    ["BaseUrl"]=$"/Military?saveId={Model.SaveGameId}&search={Model.SearchTerm}",
+    ["TotalCount"]=Model.TotalCount, ["PageSize"]=Model.PageSize
+})
+
 @section Scripts {
 <script>
     const saveId = @Model.SaveGameId;

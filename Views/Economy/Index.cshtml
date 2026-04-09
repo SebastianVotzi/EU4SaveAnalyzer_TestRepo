@@ -36,6 +36,9 @@
             <a href="/Economy?saveId=@Model.SaveGameId&filter=human" class="btn btn-sm btn-outline-warning">Nur Spieler</a>
         </div>
     </div>
+    <div class="col-md-2 text-muted small align-self-center">
+        @Model.TotalCount Nationen gesamt
+    </div>
 </div>
 
 <!-- KPI Karten (Top 3) -->
@@ -61,7 +64,7 @@
                         </div>
                         <div class="col-4">
                             <div class="kpi-value @(c.Profit >= 0 ? "text-success" : "text-danger")">
-                                @c.Profit.ToString("+N1;-N1;0")
+                                @c.ProfitDisplay
                             </div>
                             <div class="kpi-label">Profit/M</div>
                         </div>
@@ -150,9 +153,9 @@
                             </td>
                             <td class="text-end text-info">@c.Treasury.ToString("N0") ⚜</td>
                             <td class="text-end text-success">+@c.MonthlyIncome.ToString("N1")</td>
-                            <td class="text-end text-danger">-@c.MonthlyExpenses.ToString("N1")</td>
+                            <td class="text-end text-danger">@c.MonthlyExpenses.ToString("N1")</td>
                             <td class="text-end @(c.Profit >= 0 ? "text-success" : "text-danger") fw-bold">
-                                @c.Profit.ToString("+N1;-N1;0")
+                                @c.ProfitDisplay
                             </td>
                             <td>
                                 @{
@@ -185,6 +188,19 @@
         </div>
     </div>
 </div>
+
+@{
+    var ecoUrl = $"/Economy?saveId={Model.SaveGameId}&search={Model.SearchTerm}&filter=";
+}
+@await Html.PartialAsync("_Pagination", new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) {
+    ["Page"]       = Model.Page,
+    ["TotalPages"] = Model.TotalPages,
+    ["HasPrev"]    = Model.HasPrevPage,
+    ["HasNext"]    = Model.HasNextPage,
+    ["BaseUrl"]    = $"/Economy?saveId={Model.SaveGameId}&search={Model.SearchTerm}",
+    ["TotalCount"] = Model.TotalCount,
+    ["PageSize"]   = Model.PageSize
+})
 
 @section Scripts {
 <script>

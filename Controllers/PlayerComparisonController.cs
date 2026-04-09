@@ -136,6 +136,11 @@ public class PlayerComparisonController : Controller
             MilSpentIdeas   = c.MilSpentIdeas,
             MilSpentLeaders = c.MilSpentLeaders,
             MilSpentOther   = c.MilSpentOther,
+
+            // Entwicklungsclicks
+            DevClicksAdm = c.DevClicksAdm,
+            DevClicksDip = c.DevClicksDip,
+            DevClicksMil = c.DevClicksMil,
         }).ToList();
 
         // Schritt 4: Ausgewählte Tags aus dem Query-String parsen

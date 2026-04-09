@@ -1,0 +1,38 @@
+@{
+    int    currentPage  = ViewData["Page"]       is int    p  ? p  : 1;
+    int    totalPages   = ViewData["TotalPages"]  is int    tp ? tp : 1;
+    bool   hasPrev      = ViewData["HasPrev"]     is bool   hv ? hv : false;
+    bool   hasNext      = ViewData["HasNext"]     is bool   hn ? hn : false;
+    string baseUrl      = ViewData["BaseUrl"]     is string bu ? bu : "#";
+    int    totalCount   = ViewData["TotalCount"]  is int    tc ? tc : 0;
+    int    pageSize     = ViewData["PageSize"]    is int    ps ? ps : 50;
+}
+
+@if (totalPages > 1)
+{
+    int fromEntry = (currentPage - 1) * pageSize + 1;
+    int toEntry   = Math.Min(currentPage * pageSize, totalCount);
+
+    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+        <span class="text-muted small">
+            @fromEntry–@toEntry von @totalCount Einträgen &nbsp;·&nbsp; Seite @currentPage / @totalPages
+        </span>
+        <div class="d-flex gap-1 flex-wrap">
+            @if (hasPrev)
+            {
+                <a href="@baseUrl&page=1"                    class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-double-left"></i></a>
+                <a href="@(baseUrl)&page=@(currentPage - 1)" class="btn btn-sm btn-outline-warning"><i class="bi bi-chevron-left"></i> Zurück</a>
+            }
+            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+            {
+                <a href="@(baseUrl)&page=@i"
+                   class="btn btn-sm @(i == currentPage ? "btn-warning" : "btn-outline-secondary")">@i</a>
+            }
+            @if (hasNext)
+            {
+                <a href="@(baseUrl)&page=@(currentPage + 1)" class="btn btn-sm btn-outline-warning">Weiter <i class="bi bi-chevron-right"></i></a>
+                <a href="@(baseUrl)&page=@totalPages"         class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-double-right"></i></a>
+            }
+        </div>
+    </div>
+}

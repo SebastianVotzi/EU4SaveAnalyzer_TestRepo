@@ -17,28 +17,37 @@ public class MilitaryController : Controller
     private readonly AppDbContext _db;
     public MilitaryController(AppDbContext db) => _db = db;
 
-    public async Task<IActionResult> Index(int saveId, string? search)
+    public async Task<IActionResult> Index(int saveId, string? search, int page = 1)
     {
         var save = await _db.SaveGames.FindAsync(saveId);
         if (save == null) return RedirectToAction("Index", "Home");
 
+        const int pageSize = 50;
         var query = _db.Countries
-            .Where(c => c.SaveGameId == saveId && c.ArmySize > 0);
+            .Where(c => c.SaveGameId == saveId && c.TotalDevelopment > 0);
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(c => c.Name.Contains(search) || c.Tag.Contains(search));
 
+        int totalCount = await query.CountAsync();
+        int safePage   = Math.Max(1, Math.Min(page, (int)Math.Ceiling(totalCount / (double)pageSize)));
+
         var countries = await query
             .OrderByDescending(c => c.ArmySize)
-            .Take(25)
+            .ThenByDescending(c => c.TotalDevelopment)
+            .Skip((safePage - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var vm = new MilitaryViewModel
         {
             SaveGameId = saveId,
-            GameDate = save.GameDate,
+            GameDate   = save.GameDate,
             SearchTerm = search,
-            Countries = countries.Select(c => new MilitaryCountryData
+            Page       = safePage,
+            PageSize   = pageSize,
+            TotalCount = totalCount,
+            Countries  = countries.Select(c => new MilitaryCountryData
             {
                 Tag = c.Tag,
                 Name = c.Name,
@@ -61,7 +70,7 @@ public class MilitaryController : Controller
     public async Task<IActionResult> ChartData(int saveId)
     {
         var countries = await _db.Countries
-            .Where(c => c.SaveGameId == saveId && c.ArmySize > 0)
+            .Where(c => c.SaveGameId == saveId && c.TotalDevelopment > 0)
             .OrderByDescending(c => c.ArmySize)
             .Take(15)
             .ToListAsync();
@@ -89,28 +98,37 @@ public class SpendingController : Controller
     private readonly AppDbContext _db;
     public SpendingController(AppDbContext db) => _db = db;
 
-    public async Task<IActionResult> Index(int saveId, string? search)
+    public async Task<IActionResult> Index(int saveId, string? search, int page = 1)
     {
         var save = await _db.SaveGames.FindAsync(saveId);
         if (save == null) return RedirectToAction("Index", "Home");
 
+        const int pageSize = 50;
         var query = _db.Countries
-            .Where(c => c.SaveGameId == saveId && c.MonthlyExpenses > 0);
+            .Where(c => c.SaveGameId == saveId && c.TotalDevelopment > 0);
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(c => c.Name.Contains(search) || c.Tag.Contains(search));
 
+        int totalCount = await query.CountAsync();
+        int safePage   = Math.Max(1, Math.Min(page, (int)Math.Ceiling(totalCount / (double)pageSize)));
+
         var countries = await query
             .OrderByDescending(c => c.MonthlyExpenses)
-            .Take(20)
+            .ThenByDescending(c => c.TotalDevelopment)
+            .Skip((safePage - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var vm = new SpendingViewModel
         {
             SaveGameId = saveId,
-            GameDate = save.GameDate,
+            GameDate   = save.GameDate,
             SearchTerm = search,
-            Countries = countries.Select(c => new SpendingCountryData
+            Page       = safePage,
+            PageSize   = pageSize,
+            TotalCount = totalCount,
+            Countries  = countries.Select(c => new SpendingCountryData
             {
                 Tag = c.Tag,
                 Name = c.Name,
@@ -158,29 +176,37 @@ public class ManaController : Controller
     private readonly AppDbContext _db;
     public ManaController(AppDbContext db) => _db = db;
 
-    public async Task<IActionResult> Index(int saveId, string? search)
+    public async Task<IActionResult> Index(int saveId, string? search, int page = 1)
     {
         var save = await _db.SaveGames.FindAsync(saveId);
         if (save == null) return RedirectToAction("Index", "Home");
 
+        const int pageSize = 50;
         var query = _db.Countries
-            .Where(c => c.SaveGameId == saveId &&
-                       (c.TotalAdmGenerated > 0 || c.TotalDipGenerated > 0 || c.TotalMilGenerated > 0));
+            .Where(c => c.SaveGameId == saveId && c.TotalDevelopment > 0);
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(c => c.Name.Contains(search) || c.Tag.Contains(search));
 
+        int totalCount = await query.CountAsync();
+        int safePage   = Math.Max(1, Math.Min(page, (int)Math.Ceiling(totalCount / (double)pageSize)));
+
         var countries = await query
             .OrderByDescending(c => c.TotalAdmGenerated + c.TotalDipGenerated + c.TotalMilGenerated)
-            .Take(20)
+            .ThenByDescending(c => c.TotalDevelopment)
+            .Skip((safePage - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var vm = new ManaViewModel
         {
             SaveGameId = saveId,
-            GameDate = save.GameDate,
+            GameDate   = save.GameDate,
             SearchTerm = search,
-            Countries = countries.Select(c => new ManaCountryData
+            Page       = safePage,
+            PageSize   = pageSize,
+            TotalCount = totalCount,
+            Countries  = countries.Select(c => new ManaCountryData
             {
                 Tag = c.Tag,
                 Name = c.Name,
@@ -215,7 +241,7 @@ public class ManaController : Controller
     public async Task<IActionResult> ChartData(int saveId, string manaType = "adm")
     {
         var countries = await _db.Countries
-            .Where(c => c.SaveGameId == saveId && c.TotalAdmGenerated > 0)
+            .Where(c => c.SaveGameId == saveId && c.TotalDevelopment > 0)
             .OrderByDescending(c => c.TotalAdmGenerated + c.TotalDipGenerated + c.TotalMilGenerated)
             .Take(15)
             .ToListAsync();
@@ -265,11 +291,12 @@ public class WarsController : Controller
     private readonly AppDbContext _db;
     public WarsController(AppDbContext db) => _db = db;
 
-    public async Task<IActionResult> Index(int saveId, string? search)
+    public async Task<IActionResult> Index(int saveId, string? search, int page = 1)
     {
         var save = await _db.SaveGames.FindAsync(saveId);
         if (save == null) return RedirectToAction("Index", "Home");
 
+        const int pageSize = 30;
         var query = _db.Wars.Where(w => w.SaveGameId == saveId);
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -278,10 +305,14 @@ public class WarsController : Controller
                 w.AttackerTags.Contains(search) ||
                 w.DefenderTags.Contains(search));
 
-        var wars = await query
-            .OrderByDescending(w => w.IsActive)
-            .ThenByDescending(w => w.StartDate)
-            .ToListAsync();
+        int totalPrevious = await query.CountAsync(w => !w.IsActive);
+        var activeWars    = await query.Where(w => w.IsActive).ToListAsync();
+
+        var prevQuery = query.Where(w => !w.IsActive).OrderByDescending(w => w.StartDate);
+        int safePage  = Math.Max(1, Math.Min(page, (int)Math.Ceiling(totalPrevious / (double)pageSize)));
+        var prevWars  = await prevQuery.Skip((safePage - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        var wars = activeWars.Concat(prevWars).ToList();
 
         static WarData Map(EU4SaveAnalyzer.Models.War w) => new()
         {
@@ -300,11 +331,14 @@ public class WarsController : Controller
 
         var vm = new WarsViewModel
         {
-            SaveGameId = saveId,
-            GameDate = save.GameDate,
-            SearchTerm = search,
-            ActiveWars = wars.Where(w => w.IsActive).Select(Map).ToList(),
-            PreviousWars = wars.Where(w => !w.IsActive).Select(Map).ToList()
+            SaveGameId       = saveId,
+            GameDate         = save.GameDate,
+            SearchTerm       = search,
+            Page             = safePage,
+            PageSize         = pageSize,
+            TotalPreviousWars = totalPrevious,
+            ActiveWars       = activeWars.Select(Map).ToList(),
+            PreviousWars     = prevWars.Select(Map).ToList()
         };
 
         return View(vm);
@@ -323,13 +357,16 @@ public class RankingController : Controller
     private readonly AppDbContext _db;
     public RankingController(AppDbContext db) => _db = db;
 
-    public async Task<IActionResult> Index(int saveId, string sortBy = "army", string? search= null)
+    public async Task<IActionResult> Index(int saveId, string sortBy = "army",
+        string? search = null, int page = 1)
     {
         var save = await _db.SaveGames.FindAsync(saveId);
         if (save == null) return RedirectToAction("Index", "Home");
 
+        const int pageSize = 50;
+
         var query = _db.Countries
-            .Where(c => c.SaveGameId == saveId && c.ProvinceCount > 0);
+            .Where(c => c.SaveGameId == saveId && c.TotalDevelopment > 0);
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(c => c.Name.Contains(search) || c.Tag.Contains(search));
@@ -346,43 +383,61 @@ public class RankingController : Controller
             "mana"       => query.OrderByDescending(c =>
                                c.TotalAdmGenerated + c.TotalDipGenerated + c.TotalMilGenerated),
             "dev"        => query.OrderByDescending(c => c.TotalDevelopment),
+            "devclicks"  => query.OrderByDescending(c => c.DevClicksAdm + c.DevClicksDip + c.DevClicksMil),
             _            => query.OrderByDescending(c => c.ArmySize)
         };
 
-        var countries = await query.Take(50).ToListAsync();
+        // Pagination
+        int totalCount = await query.CountAsync();
+        int safePage   = Math.Max(1, Math.Min(page, (int)Math.Ceiling(totalCount / (double)pageSize)));
+
+        var countries = await query
+            .Skip((safePage - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        // Globalen Rang berechnen (relativ zur sortierten Gesamtliste)
+        int rankOffset = (safePage - 1) * pageSize;
 
         var entries = countries.Select((c, i) => new RankingEntry
         {
-            Rank = i + 1,
-            Tag = c.Tag,
-            Name = c.Name,
-            // Spielername nur bei menschlichen Spielern anzeigen, sonst leer
-            PlayerName = c.IsHuman ? (c.PlayerName ?? c.Tag) : null,
-            IsHuman = c.IsHuman,
-            ArmySize = c.ArmySize,
-            ForceLimit = c.ForceLimit,
-            Manpower = c.Manpower,
-            MonthlyIncome = c.MonthlyIncome,
-            ProvinceCount = c.ProvinceCount,
-            RulerAdm = c.RulerAdm,
-            RulerDip = c.RulerDip,
-            RulerMil = c.RulerMil,
-            RulerAvg = c.RulerAvg,
+            Rank              = rankOffset + i + 1,
+            Tag               = c.Tag,
+            Name              = c.Name,
+            PlayerName        = c.IsHuman ? (c.PlayerName ?? c.Tag) : null,
+            IsHuman           = c.IsHuman,
+            ArmySize          = c.ArmySize,
+            ForceLimit        = c.ForceLimit,
+            Manpower          = c.Manpower,
+            MonthlyIncome     = c.MonthlyIncome,
+            ProvinceCount     = c.ProvinceCount,
+            TotalDevelopment  = c.TotalDevelopment,
+            RulerAdm          = c.RulerAdm,
+            RulerDip          = c.RulerDip,
+            RulerMil          = c.RulerMil,
+            RulerAvg          = c.RulerAvg,
             TotalAdmGenerated = c.TotalAdmGenerated,
             TotalDipGenerated = c.TotalDipGenerated,
             TotalMilGenerated = c.TotalMilGenerated,
-            TotalDevelopment = c.TotalDevelopment
+            DevClicksAdm      = c.DevClicksAdm,
+            DevClicksDip      = c.DevClicksDip,
+            DevClicksMil      = c.DevClicksMil,
         }).ToList();
 
         var vm = new RankingViewModel
         {
             SaveGameId = saveId,
-            GameDate = save.GameDate,
-            SortBy = sortBy,
+            GameDate   = save.GameDate,
+            SortBy     = sortBy,
             SearchTerm = search,
-            Rankings = entries
+            Rankings   = entries,
+            Page       = safePage,
+            PageSize   = pageSize,
+            TotalCount = totalCount,
         };
 
+        ViewBag.SaveId   = saveId;
+        ViewBag.GameDate = save.GameDate;
         return View(vm);
     }
 }

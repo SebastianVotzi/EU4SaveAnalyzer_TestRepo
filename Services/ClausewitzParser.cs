@@ -7,29 +7,36 @@ namespace EU4SaveAnalyzer.Services;
 /// Das Format ist ein verschachteltes Key-Value-Format:
 ///   key=value
 ///   key={ nested=value ... }
+///
+/// Besonderheit: Manche Blöcke enthalten nur Werte ohne Keys (Listen), z.B.:
+///   players_countries={ "SteamName" "FRA" "OtherPlayer" "ENG" }
+/// Diese werden unter dem internen Schlüssel "_values" als List<string> gespeichert.
 /// </summary>
 public class ClausewitzParser
 {
     private readonly string _text;
     private int _pos;
 
+    /// <summary>Erstellt einen neuen Parser für den gegebenen Rohtext.</summary>
     public ClausewitzParser(string text)
     {
         _text = text;
-        _pos = 0;
+        _pos  = 0;
     }
 
     /// <summary>
     /// Parst den gesamten Text und gibt ein Dictionary mit allen geparsten Werten zurück.
-    /// Werte können strings, Listen (List&lt;object&gt;) oder weitere Dictionaries sein.
     /// </summary>
     public Dictionary<string, object> Parse()
     {
-        return ParseBlock();
+        return ParseBlock(isRoot: true);
     }
 
-    // Liest einen gesamten Block (zwischen { }) oder das Root-Dokument
-    private Dictionary<string, object> ParseBlock()
+    /// <summary>
+    /// Liest einen gesamten Block (zwischen { }) oder das Root-Dokument.
+    /// isRoot=true: } wird nicht als Blockende behandelt (Root hat keine schließende Klammer).
+    /// </summary>
+    private Dictionary<string, object> ParseBlock(bool isRoot = false)
     {
         var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
@@ -38,28 +45,45 @@ public class ClausewitzParser
             SkipWhitespaceAndComments();
             if (_pos >= _text.Length) break;
 
-            // End of block
-            if (_text[_pos] == '}')
+            // Blockende: } schließt einen Sub-Block
+            if (!isRoot && _text[_pos] == '}')
             {
                 _pos++;
                 break;
             }
 
-            // Liest Key
-            string key = ReadToken();
-            if (string.IsNullOrEmpty(key)) break;
+            // Verirrtes } im Root überspringen
+            if (isRoot && _text[_pos] == '}')
+            {
+                _pos++;
+                continue;
+            }
+
+            // Key lesen: quoted String oder normales Token
+            string key;
+            if (_text[_pos] == '"')
+                key = ReadQuotedString();
+            else
+                key = ReadToken();
+
+            // Leeres Token: unbekanntes Zeichen überspringen (verhindert Endlosschleife)
+            if (string.IsNullOrEmpty(key))
+            {
+                _pos++;
+                continue;
+            }
 
             SkipWhitespaceAndComments();
 
-            // Prüft ob '=' folgt
             if (_pos < _text.Length && _text[_pos] == '=')
             {
-                _pos++; // '=' überspringen
+                // Normaler Key=Value Eintrag
+                _pos++;
                 SkipWhitespaceAndComments();
 
                 object value = ReadValue();
 
-                // Bei doppelten Keys wird ein List-Eintrag erzeugt
+                // Doppelte Keys → als Liste behandeln (z.B. active_war, previous_war)
                 if (result.ContainsKey(key))
                 {
                     if (result[key] is List<object> list)
@@ -72,29 +96,36 @@ public class ClausewitzParser
                     result[key] = value;
                 }
             }
+            else
+            {
+                // Bare Value (kein '=') → unter "_values" sammeln
+                if (!result.ContainsKey("_values"))
+                    result["_values"] = new List<string>();
+
+                ((List<string>)result["_values"]).Add(key.Trim('"'));
+            }
         }
 
         return result;
     }
 
-    // Liest einen Wert: entweder einen Block {}, einen String, oder ein Token
+    /// <summary>Liest einen Wert: Block {}, Quoted String oder Token.</summary>
     private object ReadValue()
     {
         if (_pos >= _text.Length) return string.Empty;
 
         if (_text[_pos] == '{')
         {
-            _pos++; // '{' überspringen
-            return ParseBlock();
+            _pos++;
+            return ParseBlock(isRoot: false);
         }
         if (_text[_pos] == '"')
-        {
             return ReadQuotedString();
-        }
+
         return ReadToken();
     }
 
-    // Liest einen in Anführungszeichen eingeschlossenen String
+    /// <summary>Liest einen in Anführungszeichen eingeschlossenen String.</summary>
     private string ReadQuotedString()
     {
         _pos++; // öffnendes " überspringen
@@ -116,7 +147,9 @@ public class ClausewitzParser
         return sb.ToString();
     }
 
-    // Liest ein Token (alphanumerisch, Punkte, Minuszeichen für Zahlen und Daten)
+    /// <summary>
+    /// Liest ein Token bis zum nächsten Trennzeichen (Whitespace, =, {, }, #, ").
+    /// </summary>
     private string ReadToken()
     {
         var sb = new StringBuilder();
@@ -125,7 +158,8 @@ public class ClausewitzParser
                _text[_pos] != '=' &&
                _text[_pos] != '{' &&
                _text[_pos] != '}' &&
-               _text[_pos] != '#')
+               _text[_pos] != '#' &&
+               _text[_pos] != '"')
         {
             sb.Append(_text[_pos]);
             _pos++;
@@ -133,7 +167,7 @@ public class ClausewitzParser
         return sb.ToString();
     }
 
-    // Überspringt Leerzeichen und Kommentare (#...)
+    /// <summary>Überspringt Leerzeichen, Tabs, Zeilenumbrüche und # Kommentare.</summary>
     private void SkipWhitespaceAndComments()
     {
         while (_pos < _text.Length)
@@ -144,7 +178,6 @@ public class ClausewitzParser
             }
             else if (_text[_pos] == '#')
             {
-                // Kommentar bis Zeilenende überspringen
                 while (_pos < _text.Length && _text[_pos] != '\n')
                     _pos++;
             }
@@ -155,7 +188,9 @@ public class ClausewitzParser
         }
     }
 
-    // ---- Hilfsmethoden für das Auslesen von Werten aus dem Dictionary ----
+    // ============================================================
+    // Statische Hilfsmethoden
+    // ============================================================
 
     /// <summary>Liest einen String-Wert aus dem Dictionary, mit Fallback.</summary>
     public static string GetString(Dictionary<string, object> dict, string key, string fallback = "")
@@ -165,7 +200,7 @@ public class ClausewitzParser
         return fallback;
     }
 
-    /// <summary>Liest einen Double-Wert aus dem Dictionary, mit Fallback 0.</summary>
+    /// <summary>Liest einen Double-Wert (InvariantCulture), mit Fallback 0.</summary>
     public static double GetDouble(Dictionary<string, object> dict, string key, double fallback = 0)
     {
         if (dict.TryGetValue(key, out var val))
@@ -181,19 +216,43 @@ public class ClausewitzParser
     /// <summary>Liest einen Int-Wert aus dem Dictionary, mit Fallback 0.</summary>
     public static int GetInt(Dictionary<string, object> dict, string key, int fallback = 0)
     {
-        return (int)GetDouble(dict, key, fallback);
+        return (int)Math.Round(GetDouble(dict, key, fallback));
     }
 
-    /// <summary>Liest ein Sub-Dictionary aus dem Dictionary.</summary>
+    /// <summary>
+    /// Gibt ein verschachteltes Sub-Dictionary zurück.
+    /// Bei List-Wert (doppelter Key) wird das erste Dictionary-Element genommen.
+    /// </summary>
     public static Dictionary<string, object>? GetDict(Dictionary<string, object> dict, string key)
     {
-        if (dict.TryGetValue(key, out var val) && val is Dictionary<string, object> d)
-            return d;
+        if (!dict.TryGetValue(key, out var val)) return null;
+
+        if (val is Dictionary<string, object> d) return d;
+
+        if (val is List<object> list)
+            return list.OfType<Dictionary<string, object>>().FirstOrDefault();
+
         return null;
     }
 
     /// <summary>
-    /// Summiert alle numerischen Werte eines Dictionaries (für indexed arrays wie adm_spent_indexed).
+    /// Gibt bare-value Strings zurück die unter "_values" gespeichert wurden.
+    /// Für Blöcke wie players_countries={ "Name" "TAG" ... }.
+    /// </summary>
+    public static List<string> GetBareValues(Dictionary<string, object> dict, string key)
+    {
+        var inner = GetDict(dict, key);
+        if (inner == null) return new List<string>();
+
+        if (inner.TryGetValue("_values", out var listObj) && listObj is List<string> list)
+            return list;
+
+        return new List<string>();
+    }
+
+    /// <summary>
+    /// Summiert alle numerischen Int-Werte eines Dictionaries.
+    /// Für indexed arrays (z.B. adm_spent_indexed={ 0=500 1=1000 }).
     /// </summary>
     public static int SumDictValues(Dictionary<string, object>? dict)
     {
@@ -201,6 +260,7 @@ public class ClausewitzParser
         int sum = 0;
         foreach (var kv in dict)
         {
+            if (kv.Key == "_values") continue;
             if (int.TryParse(kv.Value?.ToString(), out int v))
                 sum += v;
         }
@@ -208,8 +268,27 @@ public class ClausewitzParser
     }
 
     /// <summary>
-    /// Liest bestimmte Indizes aus einem indexed-Dict und summiert sie.
-    /// EU4 speichert Mana-Ausgaben als indexed arrays: 0=Tech, 1=Ideas, usw.
+    /// Summiert alle numerischen Double-Werte eines Dictionaries.
+    /// Für ledger-Ausgaben wo Dezimalwerte vorkommen.
+    /// </summary>
+    public static double SumDictIndexedDoubles(Dictionary<string, object>? dict)
+    {
+        if (dict == null) return 0;
+        double sum = 0;
+        foreach (var kv in dict)
+        {
+            if (kv.Key == "_values") continue;
+            if (double.TryParse(kv.Value?.ToString(),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double v))
+                sum += v;
+        }
+        return sum;
+    }
+
+    /// <summary>
+    /// Summiert bestimmte Indizes aus einem indexed-Dict.
+    /// EU4 speichert Mana-Ausgaben als: adm_spent_indexed={ 0=500 1=1000 2=200 }
     /// </summary>
     public static int SumIndices(Dictionary<string, object>? dict, params int[] indices)
     {
@@ -217,11 +296,26 @@ public class ClausewitzParser
         int sum = 0;
         foreach (int idx in indices)
         {
-            var key = idx.ToString();
-            if (dict.TryGetValue(key, out var val) &&
+            if (dict.TryGetValue(idx.ToString(), out var val) &&
                 int.TryParse(val?.ToString(), out int v))
                 sum += v;
         }
         return sum;
+    }
+
+    /// <summary>
+    /// Liest einen Double-Wert anhand eines numerischen Index aus einem indexed-Dict.
+    /// Für ledger.lastmonthincome und lastmonthexpense.
+    /// </summary>
+    public static double GetIndexedDouble(Dictionary<string, object>? dict, int index)
+    {
+        if (dict == null) return 0;
+        if (dict.TryGetValue(index.ToString(), out var val))
+        {
+            if (double.TryParse(val?.ToString(), System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double d))
+                return d;
+        }
+        return 0;
     }
 }

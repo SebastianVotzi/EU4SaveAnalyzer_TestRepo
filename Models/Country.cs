@@ -159,4 +159,16 @@ public class Country
 
     /// <summary>Gesamtentwicklung (Dev) aller Provinzen</summary>
     public int TotalDevelopment { get; set; }
+
+    /// <summary>Entwicklungsclicks: ADM-Mana für Entwicklung ausgegeben (Index 6)</summary>
+    public int DevClicksAdm { get; set; }
+
+    /// <summary>Entwicklungsclicks: DIP-Mana für Entwicklung ausgegeben (Index 6)</summary>
+    public int DevClicksDip { get; set; }
+
+    /// <summary>Entwicklungsclicks: MIL-Mana für Entwicklung ausgegeben (Index 6)</summary>
+    public int DevClicksMil { get; set; }
+
+    /// <summary>Gesamte Entwicklungsclicks (ADM+DIP+MIL)</summary>
+    public int TotalDevClicks => DevClicksAdm + DevClicksDip + DevClicksMil;
 }
