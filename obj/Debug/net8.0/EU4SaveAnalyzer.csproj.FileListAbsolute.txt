@@ -1,0 +1,9 @@
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.csproj.AssemblyReference.cache
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.AssemblyInfoInputs.cache
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.AssemblyInfo.cs
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.csproj.CoreCompileInputs.cache
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.RazorAssemblyInfo.cache
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.RazorAssemblyInfo.cs
+C:\Users\Admin\source\repos\SebastianVotzi\EU4SaveAnalyzer_TestRepo\obj\Debug\net8.0\EU4SaveAnalyzer.sourcelink.json
