@@ -59,7 +59,7 @@ public class DiagnosticController : Controller
             // Zähle key=value Paare im Rohtext-Block
             string danBlock = rawText.Substring(blockStart + 1, blockEnd - blockStart - 1);
             var topLevelKeys = new List<string>();
-            int d2 = 0, lastKeyStart = 0;
+            int d2 = 0;
             bool inStr = false;
             for (int i = 0; i < danBlock.Length; i++)
             {

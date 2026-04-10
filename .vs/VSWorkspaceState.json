@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Controllers",
+    "\\Services"
   ],
-  "SelectedNode": "\\eu4saves.db",
+  "SelectedNode": "\\Controllers\\DiagnosticController.cs",
   "PreviewInSolutionExplorer": false
 }

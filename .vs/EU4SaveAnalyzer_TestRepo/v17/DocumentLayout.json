@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\Controllers\\DiagnosticController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Controllers\\DiagnosticController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\Services\\EU4SaveParser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Services\\EU4SaveParser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -55,6 +59,19 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "DiagnosticController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\Controllers\\DiagnosticController.cs",
+              "RelativeDocumentMoniker": "Controllers\\DiagnosticController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\Controllers\\DiagnosticController.cs",
+              "RelativeToolTip": "Controllers\\DiagnosticController.cs",
+              "ViewState": "AQIAADMAAAAAAAAAAAAAAEEAAAAlAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-10T07:44:50.037Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "EU4SaveParser.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\Services\\EU4SaveParser.cs",
               "RelativeDocumentMoniker": "Services\\EU4SaveParser.cs",
@@ -67,7 +84,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "SETUP.md",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\SETUP.md",
               "RelativeDocumentMoniker": "SETUP.md",
@@ -79,7 +96,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "AppDbContext.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\Data\\AppDbContext.cs",
               "RelativeDocumentMoniker": "Data\\AppDbContext.cs",
@@ -91,7 +108,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
@@ -103,7 +120,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "site.css",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\wwwroot\\css\\site.css",
               "RelativeDocumentMoniker": "wwwroot\\css\\site.css",
@@ -115,7 +132,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "ViewModels.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\ViewModels\\ViewModels.cs",
               "RelativeDocumentMoniker": "ViewModels\\ViewModels.cs",
@@ -127,7 +144,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "PlayerComparisonViewModel.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\ViewModels\\PlayerComparisonViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\PlayerComparisonViewModel.cs",
@@ -139,7 +156,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
@@ -147,12 +164,11 @@
               "RelativeToolTip": "Program.cs",
               "ViewState": "AQIAAB4AAAAAAAAAAAAAADgAAAARAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-09T16:33:18.414Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-09T16:33:18.414Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "EU4SaveAnalyzer.csproj",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\SebastianVotzi\\EU4SaveAnalyzer_TestRepo\\EU4SaveAnalyzer.csproj",
               "RelativeDocumentMoniker": "EU4SaveAnalyzer.csproj",
