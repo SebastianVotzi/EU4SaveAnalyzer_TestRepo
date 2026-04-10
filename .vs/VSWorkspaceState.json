@@ -1,13 +1,7 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\Controllers",
-    "\\Data",
-    "\\Services",
-    "\\ViewModels",
-    "\\wwwroot",
-    "\\wwwroot\\css"
+    ""
   ],
-  "SelectedNode": "\\Program.cs",
-  "PreviewInSolutionExplorer": true
+  "SelectedNode": "\\eu4saves.db",
+  "PreviewInSolutionExplorer": false
 }

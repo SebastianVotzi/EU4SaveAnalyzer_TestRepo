@@ -164,6 +164,7 @@ html, body {
     border-color: rgba(255,255,255,0.05) !important;
     vertical-align: middle;
     font-size: 0.85rem;
+    color: #e8e8f0;
 }
 
 .human-row td { background-color: rgba(255,193,7,0.04) !important; }
@@ -473,3 +474,56 @@ html, body {
 }
 
 .mana-display { font-size: 0.8rem; }
+
+/* ============================================================
+   Dark Theme Text Overrides - alle Texte lesbar auf dunklem Hintergrund
+   ============================================================ */
+
+/* text-muted heller machen (Bootstrap default #6c757d ist zu dunkel) */
+.text-muted { color: #a0aab4 !important; }
+
+/* Tabellen-Texte */
+.table-dark td, .table-dark th { color: #e8e8f0 !important; }
+.table-dark .text-muted { color: #a0aab4 !important; }
+
+/* Navbar Text */
+.navbar-text { color: #e8e8f0 !important; }
+
+/* Card-Texte */
+.card-body .text-muted  { color: #a0aab4 !important; }
+.card-header .text-muted { color: #a0aab4 !important; }
+
+/* Formular Labels */
+.form-label { color: #e8e8f0 !important; }
+
+/* Alert Texte */
+.alert-info { color: #e8e8f0; background-color: #1a3a4a; border-color: #0dcaf0; }
+
+/* Footer */
+.footer .text-muted { color: #a0aab4 !important; }
+
+/* Page Header */
+.page-header p.text-muted { color: #a0aab4 !important; }
+
+/* Stat Labels in Karten */
+.kpi-label, .ps-label, .stat-mini-label { color: #a0aab4 !important; }
+
+/* Kleine Texte in Tabellen */
+.table small, .table .small { color: #a0aab4 !important; }
+
+/* Nation-Tags im hellen Stil */
+.player-card-nation { color: #c0c8d0 !important; }
+
+/* Mana breakdown text */
+.mana-breakdown .mana-seg { opacity: 1; }
+
+/* War card text */
+.war-card .text-muted { color: #a0aab4 !important; }
+.war-stats { color: #c0c8d0 !important; }
+
+/* Upload hint */
+.upload-zone small { color: #a0aab4 !important; }
+.upload-zone p     { color: #d0d8e0 !important; }
+
+/* text-secondary ebenfalls aufhellen */
+.text-secondary { color: #8899aa !important; }

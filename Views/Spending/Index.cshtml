@@ -7,7 +7,7 @@
 
 <div class="page-header mb-4">
     <h2><i class="bi bi-pie-chart-fill me-2 text-warning"></i>Spending-Dashboard
-        <small class="text-muted fs-6 ms-2">@Model.GameDate</small>
+        <small class="text-secondary fs-6 ms-2">@Model.GameDate</small>
     </h2>
     <p class="text-muted">Monatliche Ausgaben aufgeteilt nach Kategorien</p>
 </div>
@@ -98,7 +98,7 @@
                                 }
                                 else
                                 {
-                                    <span class="text-muted">—</span>
+                                    <span style="color:#6c8099">—</span>
                                 }
                             </td>
                             <td class="text-end text-danger fw-bold">@c.TotalExpenses.ToString("N1")</td>
