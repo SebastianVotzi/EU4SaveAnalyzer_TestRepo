@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EU4SaveAnalyzer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c1f3a75cb83799e0ead2b5834688c7f022e0aed1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ebd9a5177399db37de75a371deb2d35edff1f19d")]
 [assembly: System.Reflection.AssemblyProductAttribute("EU4SaveAnalyzer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EU4SaveAnalyzer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
